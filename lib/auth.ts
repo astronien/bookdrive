@@ -1,0 +1,77 @@
+import NextAuth from 'next-auth';
+import Google from 'next-auth/providers/google';
+
+export const DRIVE_SCOPES = [
+  'openid',
+  'email',
+  'profile',
+  'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/drive.appdata',
+].join(' ');
+
+declare module 'next-auth' {
+  interface Session {
+    accessToken?: string;
+    error?: 'RefreshTokenError';
+  }
+}
+
+async function refresh(token: any) {
+  try {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: process.env.AUTH_GOOGLE_ID!,
+        client_secret: process.env.AUTH_GOOGLE_SECRET!,
+        grant_type: 'refresh_token',
+        refresh_token: token.refreshToken,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw data;
+    return {
+      ...token,
+      accessToken: data.access_token,
+      expiresAt: Math.floor(Date.now() / 1000) + data.expires_in,
+      // Google ส่ง refresh_token ใหม่มาเฉพาะบางครั้ง — เก็บของเดิมไว้ถ้าไม่มา
+      refreshToken: data.refresh_token ?? token.refreshToken,
+    };
+  } catch {
+    return { ...token, error: 'RefreshTokenError' as const };
+  }
+}
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  providers: [
+    Google({
+      authorization: {
+        params: {
+          scope: DRIVE_SCOPES,
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, account }) {
+      if (account) {
+        return {
+          ...token,
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token,
+          expiresAt: account.expires_at,
+        };
+      }
+      // เหลืออายุ > 5 นาที ใช้ตัวเดิมได้
+      if (Date.now() / 1000 < (token as any).expiresAt - 300) return token;
+      return refresh(token);
+    },
+    async session({ session, token }) {
+      session.accessToken = (token as any).accessToken;
+      session.error = (token as any).error;
+      return session;
+    },
+  },
+});

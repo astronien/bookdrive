@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookDrive — UI Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#191d44; --navy2:#232a5c; --navy3:#2e3672;
+  --accent:#4ecdc4; --accent-d:#3ab5ac; --coral:#ff6b6b;
+  --bg:#f5f6fa; --surface:#fff; --text:#1a1c2e; --muted:#8b90a8; --line:#e6e8f0;
+  --shadow:0 4px 16px rgba(25,29,68,.10);
+  --shadow-lg:0 12px 40px rgba(25,29,68,.20);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter','Noto Sans Thai',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font-family:inherit}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#c9cddd;border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- shell ---------- */
+.app{display:flex;height:100vh}
+
+/* ---------- sidebar ---------- */
+.sidebar{width:252px;background:var(--navy);color:#fff;display:flex;flex-direction:column;flex-shrink:0;transition:width .22s}
+.sidebar.collapsed{width:68px}
+.brand{display:flex;align-items:center;gap:10px;padding:20px 18px;height:64px}
+.brand-logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#3a9ad9);display:grid;place-items:center;font-weight:700;font-size:15px;color:var(--navy);flex-shrink:0}
+.brand-name{font-weight:700;font-size:17px;letter-spacing:-.3px;white-space:nowrap}
+.sidebar.collapsed .brand-name,.sidebar.collapsed .nav-label,.sidebar.collapsed .nav-title,.sidebar.collapsed .badge,.sidebar.collapsed .storage{display:none}
+
+.nav{flex:1;overflow-y:auto;padding:6px 10px 16px}
+.nav-title{font-size:10.5px;font-weight:700;letter-spacing:1.1px;color:#6a719c;padding:16px 10px 7px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:#c3c8e4;width:100%;text-align:left;margin-bottom:1px;transition:.13s;white-space:nowrap}
+.nav-item:hover{background:var(--navy2);color:#fff}
+.nav-item.active{background:var(--navy3);color:#fff}
+.nav-item.active .ico{color:var(--accent)}
+.ico{width:18px;height:18px;flex-shrink:0;stroke-width:1.9}
+.badge{margin-left:auto;background:rgba(255,255,255,.11);font-size:10.5px;padding:2px 7px;border-radius:20px;font-weight:600}
+.shelf-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;margin-left:4px}
+
+.storage{padding:14px 18px;border-top:1px solid rgba(255,255,255,.08)}
+.storage-top{display:flex;justify-content:space-between;font-size:11.5px;color:#9aa0c4;margin-bottom:7px}
+.storage-bar{height:4px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden}
+.storage-fill{height:100%;width:34%;background:linear-gradient(90deg,var(--accent),#3a9ad9);border-radius:3px}
+.storage-note{font-size:10.5px;color:#6a719c;margin-top:7px;display:flex;align-items:center;gap:5px}
+
+/* ---------- main ---------- */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:64px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 22px;flex-shrink:0}
+.icon-btn{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:var(--muted);transition:.13s;flex-shrink:0}
+.icon-btn:hover{background:var(--bg);color:var(--text)}
+.search{flex:1;max-width:460px;position:relative}
+.search input{width:100%;height:38px;border:1px solid var(--line);border-radius:10px;padding:0 14px 0 38px;font-size:13.5px;background:var(--bg);outline:none;transition:.15s}
+.search input:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(78,205,196,.14)}
+.search .ico{position:absolute;left:12px;top:10px;color:var(--muted)}
+.spacer{flex:1}
+.btn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 16px;border-radius:10px;font-size:13.5px;font-weight:600;transition:.13s}
+.btn-primary{background:var(--accent);color:#08312e}
+.btn-primary:hover{background:var(--accent-d)}
+.btn-ghost{border:1px solid var(--line);color:var(--text)}
+.btn-ghost:hover{background:var(--bg)}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#ff9a6b,var(--coral));display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0}
+
+.content{flex:1;overflow-y:auto}
+.page{display:none;padding:26px 30px 60px}
+.page.active{display:block}
+
+/* ---------- library ---------- */
+.page-head{display:flex;align-items:flex-end;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+h1{font-size:25px;font-weight:700;letter-spacing:-.5px}
+.sub{font-size:13px;color:var(--muted);margin-top:3px}
+.filters{display:flex;gap:8px;align-items:center;margin-bottom:22px;flex-wrap:wrap}
+.chip{height:32px;padding:0 13px;border-radius:20px;border:1px solid var(--line);background:#fff;font-size:12.5px;font-weight:500;color:var(--muted);display:inline-flex;align-items:center;gap:6px;transition:.13s}
+.chip:hover{border-color:#c9cddd;color:var(--text)}
+.chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.view-toggle{margin-left:auto;display:flex;background:#fff;border:1px solid var(--line);border-radius:9px;padding:3px}
+.view-toggle button{width:32px;height:26px;border-radius:6px;display:grid;place-items:center;color:var(--muted)}
+.view-toggle button.on{background:var(--bg);color:var(--navy)}
+
+.shelf-row{margin-bottom:32px}
+.shelf-head{display:flex;align-items:center;margin-bottom:14px}
+.shelf-head h2{font-size:15.5px;font-weight:700}
+.shelf-head .more{margin-left:auto;font-size:12.5px;color:var(--accent-d);font-weight:600}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:22px 18px}
+.card{cursor:pointer;position:relative}
+.cover-wrap{position:relative;border-radius:9px;overflow:hidden;box-shadow:var(--shadow);transition:.2s;aspect-ratio:2/3}
+.card:hover .cover-wrap{transform:translateY(-5px);box-shadow:var(--shadow-lg)}
+.cover{width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:16px 14px;color:#fff}
+.cover-title{font-size:14.5px;font-weight:700;line-height:1.25;text-shadow:0 1px 4px rgba(0,0,0,.28)}
+.cover-author{font-size:10.5px;opacity:.82;font-weight:500}
+.fmt{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);color:#fff;font-size:8.5px;font-weight:700;letter-spacing:.6px;padding:3px 6px;border-radius:4px}
+.prog{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(0,0,0,.28)}
+.prog i{display:block;height:100%;background:var(--accent)}
+.dl{position:absolute;top:8px;left:8px;width:19px;height:19px;border-radius:50%;background:rgba(78,205,196,.94);display:grid;place-items:center;color:#08312e}
+.meta{padding:9px 2px 0}
+.m-title{font-size:12.8px;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.m-author{font-size:11.2px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-prog{font-size:10.5px;color:var(--accent-d);font-weight:600;margin-top:3px}
+
+/* list view */
+.list{display:none;background:#fff;border-radius:12px;border:1px solid var(--line);overflow:hidden}
+.list.on{display:block}
+.grid.off{display:none}
+.lrow{display:flex;align-items:center;gap:15px;padding:11px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:.12s}
+.lrow:last-child{border-bottom:none}
+.lrow:hover{background:var(--bg)}
+.lcover{width:34px;height:50px;border-radius:4px;flex-shrink:0}
+.lmain{flex:1;min-width:0}
+.lt{font-size:13.2px;font-weight:600}
+.la{font-size:11.5px;color:var(--muted);margin-top:1px}
+.lbar{width:96px;height:4px;background:var(--line);border-radius:3px;flex-shrink:0}
+.lbar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.lpct{font-size:11.5px;color:var(--muted);width:34px;text-align:right;flex-shrink:0}
+.ltag{font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--muted);border:1px solid var(--line);padding:2px 6px;border-radius:4px;flex-shrink:0}
+
+/* ---------- book detail ---------- */
+.detail-hero{border-radius:16px;padding:34px;display:flex;gap:32px;color:#fff;margin-bottom:26px;position:relative;overflow:hidden}
+.detail-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,rgba(25,29,68,.86),rgba(25,29,68,.62))}
+.detail-hero>*{position:relative;z-index:1}
+.d-cover{width:172px;flex-shrink:0;aspect-ratio:2/3;border-radius:11px;box-shadow:0 16px 44px rgba(0,0,0,.42)}
+.d-info{flex:1;min-width:0}
+.d-title{font-size:29px;font-weight:700;letter-spacing:-.6px;line-height:1.15}
+.d-author{font-size:15px;opacity:.86;margin-top:7px}
+.d-tags{display:flex;gap:7px;margin-top:16px;flex-wrap:wrap}
+.d-tag{background:rgba(255,255,255,.15);backdrop-filter:blur(6px);font-size:11.5px;padding:4px 11px;border-radius:20px;font-weight:500}
+.d-stats{display:flex;gap:30px;margin-top:24px}
+.d-stat b{display:block;font-size:20px;font-weight:700}
+.d-stat span{font-size:11.5px;opacity:.72}
+.d-actions{display:flex;gap:10px;margin-top:24px}
+.btn-lg{height:44px;padding:0 24px;border-radius:11px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.btn-white{background:rgba(255,255,255,.14);backdrop-filter:blur(8px);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.btn-white:hover{background:rgba(255,255,255,.22)}
+
+.panels{display:grid;grid-template-columns:1fr 300px;gap:22px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:13px;padding:20px}
+.panel h3{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.panel h3 .badge2{background:var(--bg);color:var(--muted);font-size:11px;padding:1px 8px;border-radius:20px;font-weight:600}
+.hl{border-left:3px solid;padding:9px 13px;margin-bottom:11px;background:var(--bg);border-radius:0 8px 8px 0}
+.hl p{font-size:12.8px;line-height:1.6;font-family:'Lora',serif}
+.hl .n{font-size:11.5px;color:var(--muted);margin-top:7px;padding-top:7px;border-top:1px dashed var(--line);font-family:inherit}
+.hl .loc{font-size:10.5px;color:var(--muted);margin-top:6px}
+.kv{display:flex;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.kv:last-child{border:none}
+.kv b{width:96px;color:var(--muted);font-weight:500;flex-shrink:0}
+.kv span{flex:1;text-align:right}
+
+/* ---------- reader ---------- */
+.reader{position:fixed;inset:0;background:#fdfcf8;z-index:100;display:none;flex-direction:column}
+.reader.on{display:flex}
+.reader.dark{background:#16181f}
+.reader.sepia{background:#f4ecd8}
+.r-top{height:54px;display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px solid rgba(0,0,0,.06);flex-shrink:0}
+.reader.dark .r-top{border-color:rgba(255,255,255,.08);color:#d8dae3}
+.r-title{font-size:13px;font-weight:600;flex:1;text-align:center;opacity:.62}
+.r-body{flex:1;overflow-y:auto;display:flex;justify-content:center;padding:44px 20px 70px}
+.r-page{max-width:640px;width:100%;font-family:'Lora','Noto Sans Thai',serif;font-size:18px;line-height:1.78;color:#2b2b2b}
+.reader.dark .r-page{color:#c6c9d4}
+.reader.sepia .r-page{color:#4a3f2e}
+.r-page h2{font-family:inherit;font-size:25px;margin-bottom:26px;font-weight:600}
+.r-page p{margin-bottom:19px;text-align:justify}
+mark{background:rgba(255,224,102,.62);padding:1px 0;border-radius:2px;cursor:pointer}
+.reader.dark mark{background:rgba(255,224,102,.24);color:#f0e2a0}
+mark.g{background:rgba(120,230,170,.5)}
+.r-bot{height:52px;display:flex;align-items:center;gap:16px;padding:0 24px;border-top:1px solid rgba(0,0,0,.06);flex-shrink:0;font-size:11.5px;color:var(--muted)}
+.reader.dark .r-bot{border-color:rgba(255,255,255,.08)}
+.r-track{flex:1;height:4px;background:rgba(0,0,0,.09);border-radius:3px;cursor:pointer;position:relative}
+.reader.dark .r-track{background:rgba(255,255,255,.12)}
+.r-track i{display:block;height:100%;width:42%;background:var(--accent);border-radius:3px}
+.r-track i::after{content:'';position:absolute;left:42%;top:-4px;width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 1px 5px rgba(0,0,0,.28)}
+
+.r-settings{position:absolute;top:58px;right:18px;width:290px;background:#fff;border-radius:14px;box-shadow:var(--shadow-lg);padding:18px;display:none;z-index:5}
+.r-settings.on{display:block}
+.set-row{margin-bottom:18px}
+.set-row label{font-size:11.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;height:34px;border-radius:8px;border:1px solid var(--line);font-size:12.5px;font-weight:500;transition:.12s}
+.seg button:hover{border-color:#c9cddd}
+.seg button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.themes{display:flex;gap:8px}
+.theme-sw{flex:1;height:44px;border-radius:9px;border:2px solid var(--line);font-size:11px;font-weight:600;display:grid;place-items:center}
+.theme-sw.on{border-color:var(--accent)}
+.t-light{background:#fdfcf8;color:#333}.t-sepia{background:#f4ecd8;color:#5a4a33}
+.t-dark{background:#2a2d3a;color:#ccc}.t-oled{background:#000;color:#888}
+input[type=range]{width:100%;accent-color:var(--accent)}
+
+.hl-menu{position:absolute;background:var(--navy);border-radius:10px;padding:7px;display:flex;gap:5px;box-shadow:var(--shadow-lg);left:50%;top:210px;transform:translateX(-50%);z-index:6;display:none}
+.hl-menu.on{display:flex}
+.sw{width:26px;height:26px;border-radius:50%;border:2px solid transparent}
+.sw:hover{border-color:#fff}
+.hl-menu .div{width:1px;background:rgba(255,255,255,.2);margin:2px 3px}
+.hl-menu button.act{width:30px;height:26px;border-radius:6px;color:#fff;display:grid;place-items:center}
+.hl-menu button.act:hover{background:rgba(255,255,255,.14)}
+
+/* ---------- highlights page ---------- */
+.hl-grid{columns:2;column-gap:18px}
+.hl-card{break-inside:avoid;margin-bottom:18px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:17px;border-left:4px solid}
+.hl-card .src{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.hl-card .src i{width:26px;height:38px;border-radius:3px;flex-shrink:0;display:block}
+.hl-card .src b{font-size:12px;font-weight:600}
+.hl-card .src span{font-size:10.5px;color:var(--muted);display:block}
+.hl-card q{font-family:'Lora',serif;font-size:13.2px;line-height:1.65;display:block}
+.hl-card .foot{display:flex;gap:9px;margin-top:12px;font-size:10.5px;color:var(--muted);align-items:center}
+
+/* ---------- settings ---------- */
+.set-card{background:#fff;border:1px solid var(--line);border-radius:13px;padding:22px;margin-bottom:18px;max-width:680px}
+.set-card h3{font-size:14.5px;font-weight:700;margin-bottom:4px}
+.set-card .desc{font-size:12.5px;color:var(--muted);margin-bottom:18px}
+.srow{display:flex;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
+.srow:last-child{border:none}
+.srow .l{flex:1}
+.srow .l b{font-size:13px;font-weight:600;display:block}
+.srow .l span{font-size:11.5px;color:var(--muted)}
+.toggle{width:42px;height:24px;border-radius:20px;background:var(--line);position:relative;transition:.16s;flex-shrink:0}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.16s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on::after{left:21px}
+.drive-box{display:flex;align-items:center;gap:14px;background:var(--bg);border-radius:11px;padding:15px;margin-bottom:16px}
+.drive-ico{width:42px;height:42px;border-radius:11px;background:#fff;display:grid;place-items:center;box-shadow:var(--shadow);flex-shrink:0}
+.ok{margin-left:auto;font-size:11.5px;color:#0f9d58;font-weight:600;display:flex;align-items:center;gap:5px}
+
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--navy);color:#fff;padding:11px 20px;border-radius:11px;font-size:13px;box-shadow:var(--shadow-lg);transition:.26s;z-index:200;display:flex;align-items:center;gap:9px}
+.toast.on{transform:translateX(-50%) translateY(0)}
+@media(max-width:900px){.panels{grid-template-columns:1fr}.hl-grid{columns:1}.sidebar{width:68px}.sidebar .brand-name,.sidebar .nav-label,.sidebar .nav-title,.sidebar .badge,.sidebar .storage{display:none}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar" id="sb">
+    <div class="brand">
+      <div class="brand-logo">B</div>
+      <div class="brand-name">BookDrive</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-title">ไลบรารี</div>
+      <button class="nav-item active" data-page="library">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/></svg>
+        <span class="nav-label">หนังสือทั้งหมด</span><span class="badge">128</span>
+      </button>
+      <button class="nav-item" data-page="library">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>
+        <span class="nav-label">กำลังอ่าน</span><span class="badge">5</span>
+      </button>
+      <button class="nav-item" data-page="library">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+        <span class="nav-label">อ่านจบแล้ว</span><span class="badge">42</span>
+      </button>
+      <button class="nav-item" data-page="highlights">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
+        <span class="nav-label">ไฮไลต์ &amp; โน้ต</span><span class="badge">312</span>
+      </button>
+
+      <div class="nav-title">ชั้นหนังสือ</div>
+      <button class="nav-item" data-page="library"><span class="shelf-dot" style="background:#ff6b6b"></span><span class="nav-label">พัฒนาตัวเอง</span><span class="badge">18</span></button>
+      <button class="nav-item" data-page="library"><span class="shelf-dot" style="background:#4ecdc4"></span><span class="nav-label">โปรแกรมมิ่ง</span><span class="badge">34</span></button>
+      <button class="nav-item" data-page="library"><span class="shelf-dot" style="background:#ffa94d"></span><span class="nav-label">นิยาย</span><span class="badge">27</span></button>
+      <button class="nav-item" data-page="library"><span class="shelf-dot" style="background:#a78bfa"></span><span class="nav-label">ประวัติศาสตร์</span><span class="badge">12</span></button>
+
+      <div class="nav-title">จัดเรียงตาม</div>
+      <button class="nav-item" data-page="library">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="nav-label">ผู้เขียน</span></button>
+      <button class="nav-item" data-page="library">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span class="nav-label">ชุดหนังสือ</span></button>
+      <button class="nav-item" data-page="settings">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="nav-label">ตั้งค่า</span></button>
+    </nav>
+    <div class="storage">
+      <div class="storage-top"><span>Google Drive</span><span>5.2 / 15 GB</span></div>
+      <div class="storage-bar"><div class="storage-fill"></div></div>
+      <div class="storage-note">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>
+        ซิงก์ล่าสุด 2 นาทีที่แล้ว
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn" onclick="document.getElementById('sb').classList.toggle('collapsed')">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="search">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input placeholder="ค้นหาชื่อเรื่อง ผู้เขียน แท็ก หรือเนื้อหาในหนังสือ…">
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost" onclick="toast('กำลังสแกนโฟลเดอร์ BookDrive/Books บน Google Drive…')">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 1 1-6.2-8.6"/><path d="M21 3v6h-6"/></svg>
+        สแกน Drive
+      </button>
+      <button class="btn btn-primary" onclick="toast('เปิด Google Picker เพื่อเลือกไฟล์…')">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+        เพิ่มหนังสือ
+      </button>
+      <div class="avatar">A</div>
+    </header>
+
+    <div class="content">
+      <!-- ---------- LIBRARY ---------- -->
+      <section class="page active" id="p-library">
+        <div class="page-head">
+          <div><h1>หนังสือทั้งหมด</h1><div class="sub">128 เล่ม · 5.2 GB · ซิงก์กับ Google Drive แล้ว</div></div>
+        </div>
+        <div class="filters">
+          <button class="chip on">ทั้งหมด</button>
+          <button class="chip">EPUB</button>
+          <button class="chip">PDF</button>
+          <button class="chip">การ์ตูน</button>
+          <button class="chip">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg>
+            ออฟไลน์
+          </button>
+          <button class="chip">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+            เพิ่มล่าสุด
+          </button>
+          <div class="view-toggle">
+            <button class="on" onclick="setView('grid',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+            <button onclick="setView('list',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+          </div>
+        </div>
+
+        <div class="shelf-row">
+          <div class="shelf-head"><h2>อ่านต่อจากเดิม</h2><button class="more">ดูทั้งหมด →</button></div>
+          <div class="grid" id="grid-cont"></div>
+        </div>
+        <div class="shelf-row">
+          <div class="shelf-head"><h2>เพิ่มล่าสุด</h2><button class="more">ดูทั้งหมด →</button></div>
+          <div class="grid" id="grid-recent"></div>
+          <div class="list" id="list-recent"></div>
+        </div>
+      </section>
+
+      <!-- ---------- BOOK DETAIL ---------- -->
+      <section class="page" id="p-book">
+        <button class="btn btn-ghost" style="margin-bottom:18px" data-page="library">← กลับไปไลบรารี</button>
+        <div class="detail-hero" id="hero">
+          <div class="d-cover" id="d-cover"></div>
+          <div class="d-info">
+            <div class="d-title" id="d-title">Sapiens</div>
+            <div class="d-author" id="d-author">Yuval Noah Harari</div>
+            <div class="d-tags">
+              <span class="d-tag">EPUB · 2.4 MB</span>
+              <span class="d-tag">ประวัติศาสตร์</span>
+              <span class="d-tag">443 หน้า</span>
+              <span class="d-tag">★★★★☆</span>
+            </div>
+            <div class="d-stats">
+              <div class="d-stat"><b>68%</b><span>อ่านไปแล้ว</span></div>
+              <div class="d-stat"><b>9ชม 12น</b><span>เวลาอ่านรวม</span></div>
+              <div class="d-stat"><b>47</b><span>ไฮไลต์</span></div>
+              <div class="d-stat"><b>12</b><span>โน้ต</span></div>
+            </div>
+            <div class="d-actions">
+              <button class="btn-lg btn-primary" onclick="openReader()">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                อ่านต่อ
+              </button>
+              <button class="btn-lg btn-white" onclick="toast('ดาวน์โหลดไว้อ่านออฟไลน์แล้ว (2.4 MB)')">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                ออฟไลน์
+              </button>
+              <button class="btn-lg btn-white">⋯</button>
+            </div>
+          </div>
+        </div>
+        <div class="panels">
+          <div class="panel">
+            <h3>ไฮไลต์ล่าสุด <span class="badge2">47</span></h3>
+            <div class="hl" style="border-color:#ffd43b">
+              <p>"เงินเป็นระบบความไว้วางใจร่วมกันที่มนุษย์เคยประดิษฐ์ขึ้น และเป็นระบบความไว้วางใจที่เป็นสากลที่สุด"</p>
+              <div class="loc">บทที่ 10 · ตำแหน่ง 4,218</div>
+            </div>
+            <div class="hl" style="border-color:#4ecdc4">
+              <p>"เราไม่ได้ทำให้ข้าวสาลีเชื่อง — ข้าวสาลีต่างหากที่ทำให้เราเชื่อง"</p>
+              <div class="n">💬 มุมมองกลับด้านที่ดีมาก ใช้อ้างในบทความเรื่อง product-led growth ได้</div>
+              <div class="loc">บทที่ 5 · ตำแหน่ง 1,902</div>
+            </div>
+            <div class="hl" style="border-color:#a78bfa">
+              <p>"ไม่มีพระเจ้าในจักรวาล ไม่มีชาติ ไม่มีเงิน ไม่มีสิทธิมนุษยชน ไม่มีกฎหมาย นอกจากในจินตนาการร่วมของมนุษย์"</p>
+              <div class="loc">บทที่ 2 · ตำแหน่ง 612</div>
+            </div>
+            <button class="btn btn-ghost" style="width:100%;margin-top:6px">ดูไฮไลต์ทั้ง 47 รายการ</button>
+          </div>
+          <div>
+            <div class="panel" style="margin-bottom:18px">
+              <h3>ไฟล์บน Drive</h3>
+              <div class="kv"><b>ที่อยู่</b><span style="font-size:11.5px">BookDrive/Books/</span></div>
+              <div class="kv"><b>ชื่อไฟล์</b><span style="font-size:11.5px">sapiens.epub</span></div>
+              <div class="kv"><b>ขนาด</b><span>2.4 MB</span></div>
+              <div class="kv"><b>แก้ไขล่าสุด</b><span>12 มี.ค. 2026</span></div>
+              <div class="kv"><b>สถานะ</b><span style="color:#0f9d58;font-weight:600">ซิงก์แล้ว</span></div>
+            </div>
+            <div class="panel">
+              <h3>ข้อมูลหนังสือ</h3>
+              <div class="kv"><b>สำนักพิมพ์</b><span>Harper</span></div>
+              <div class="kv"><b>ปีที่พิมพ์</b><span>2015</span></div>
+              <div class="kv"><b>ภาษา</b><span>English</span></div>
+              <div class="kv"><b>ISBN</b><span style="font-size:11.5px">9780062316097</span></div>
+              <div class="kv"><b>เริ่มอ่าน</b><span>3 ก.พ. 2026</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- HIGHLIGHTS ---------- -->
+      <section class="page" id="p-highlights">
+        <div class="page-head"><div><h1>ไฮไลต์ &amp; โน้ต</h1><div class="sub">312 รายการจาก 23 เล่ม</div></div>
+          <button class="btn btn-ghost" style="margin-left:auto" onclick="toast('ส่งออกเป็น Markdown แล้ว')">ส่งออก Markdown</button>
+        </div>
+        <div class="filters">
+          <button class="chip on">ทั้งหมด</button>
+          <button class="chip"><span class="shelf-dot" style="background:#ffd43b"></span>เหลือง</button>
+          <button class="chip"><span class="shelf-dot" style="background:#4ecdc4"></span>เขียว</button>
+          <button class="chip"><span class="shelf-dot" style="background:#a78bfa"></span>ม่วง</button>
+          <button class="chip">มีโน้ตเท่านั้น</button>
+        </div>
+        <div class="hl-grid" id="hl-grid"></div>
+      </section>
+
+      <!-- ---------- SETTINGS ---------- -->
+      <section class="page" id="p-settings">
+        <div class="page-head"><div><h1>ตั้งค่า</h1><div class="sub">ข้อมูลทั้งหมดเก็บใน Google Drive ของคุณเอง</div></div></div>
+
+        <div class="set-card">
+          <h3>การเชื่อมต่อ Google Drive</h3>
+          <div class="desc">BookDrive เข้าถึงได้เฉพาะโฟลเดอร์ที่คุณเลือกเท่านั้น (scope: drive.file)</div>
+          <div class="drive-box">
+            <div class="drive-ico">
+              <svg width="22" height="22" viewBox="0 0 87.3 78"><path fill="#0066da" d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z"/><path fill="#00ac47" d="M43.65 25 29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z"/><path fill="#ea4335" d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z"/><path fill="#00832d" d="M43.65 25 57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z"/><path fill="#2684fc" d="M59.8 53H27.5L13.75 76.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z"/><path fill="#ffba00" d="M73.4 26.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25 59.8 53h27.45c0-1.55-.4-3.1-1.2-4.5z"/></svg>
+            </div>
+            <div><b style="font-size:13px">kakanajana@gmail.com</b><div style="font-size:11.5px;color:var(--muted)">โฟลเดอร์: My Drive / BookDrive</div></div>
+            <div class="ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>เชื่อมต่อแล้ว</div>
+          </div>
+          <div class="srow"><div class="l"><b>สแกนอัตโนมัติ</b><span>ตรวจไฟล์ใหม่ในโฟลเดอร์ทุก 15 นาที</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="srow"><div class="l"><b>สร้างปกอัตโนมัติ</b><span>ดึงปกจากไฟล์แล้วเก็บใน BookDrive/Covers</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="srow"><div class="l"><b>เติม metadata จาก Open Library</b><span>ค้นหาข้อมูลเพิ่มด้วย ISBN เมื่อไฟล์ให้มาไม่ครบ</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="srow"><div class="l"><b>สำรอง metadata แบบอ่านได้</b><span>เขียน backup.json ในโฟลเดอร์ปกติ กันข้อมูลหายตอนถอนสิทธิ์</span></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+
+        <div class="set-card">
+          <h3>การซิงก์</h3>
+          <div class="desc">ปรับความถี่ให้สมดุลระหว่างความสดของข้อมูลกับโควตา Drive API</div>
+          <div class="srow"><div class="l"><b>บันทึกความคืบหน้าทุก</b><span>ยิ่งถี่ยิ่งกินโควตา — แนะนำ 10 วินาที</span></div><b style="font-size:13px">10 วินาที</b></div>
+          <div class="srow"><div class="l"><b>ตรวจการเปลี่ยนแปลงจากเครื่องอื่น</b><span>ผ่าน Drive Changes API</span></div><b style="font-size:13px">60 วินาที</b></div>
+          <div class="srow"><div class="l"><b>ซิงก์เฉพาะตอนใช้ Wi-Fi</b><span></span></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+
+        <div class="set-card">
+          <h3>พื้นที่ออฟไลน์</h3>
+          <div class="desc">ใช้ไป 1.2 GB จากโควตาเบราว์เซอร์ 6 GB · 14 เล่ม</div>
+          <div class="storage-bar" style="background:var(--line)"><div class="storage-fill" style="width:20%"></div></div>
+          <div class="srow" style="margin-top:12px"><div class="l"><b>ดาวน์โหลดอัตโนมัติเมื่อเริ่มอ่าน</b><span></span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <button class="btn btn-ghost" style="margin-top:14px" onclick="toast('ล้างแคชออฟไลน์แล้ว')">ล้างแคชทั้งหมด</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ================= READER ================= -->
+<div class="reader" id="reader">
+  <div class="r-top">
+    <button class="icon-btn" onclick="closeReader()"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+    <button class="icon-btn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h10"/></svg></button>
+    <div class="r-title" id="r-title">Sapiens — บทที่ 5: การหลอกลวงครั้งใหญ่ที่สุดในประวัติศาสตร์</div>
+    <button class="icon-btn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+    <button class="icon-btn" onclick="toast('เริ่มอ่านออกเสียง (Web Speech API)')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
+    <button class="icon-btn" onclick="document.getElementById('rset').classList.toggle('on')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M4 12h10M4 17h7"/><path d="M17 14v6M20 17h-6"/></svg></button>
+  </div>
+
+  <div class="r-settings" id="rset">
+    <div class="set-row">
+      <label>ธีม</label>
+      <div class="themes">
+        <button class="theme-sw t-light on" onclick="setTheme('',this)">Aa</button>
+        <button class="theme-sw t-sepia" onclick="setTheme('sepia',this)">Aa</button>
+        <button class="theme-sw t-dark" onclick="setTheme('dark',this)">Aa</button>
+        <button class="theme-sw t-oled" onclick="setTheme('dark',this)">Aa</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <label>ฟอนต์</label>
+      <div class="seg">
+        <button class="on" onclick="setFont(&quot;'Lora',serif&quot;,this)">Serif</button>
+        <button onclick="setFont(&quot;'Inter',sans-serif&quot;,this)">Sans</button>
+        <button onclick="setFont('Georgia,serif',this)">Dyslexic</button>
+      </div>
+    </div>
+    <div class="set-row"><label>ขนาดตัวอักษร — <span id="fsv">18</span>px</label>
+      <input type="range" min="13" max="30" value="18" oninput="rp.style.fontSize=this.value+'px';fsv.textContent=this.value">
+    </div>
+    <div class="set-row"><label>ระยะบรรทัด — <span id="lhv">1.78</span></label>
+      <input type="range" min="120" max="240" value="178" oninput="rp.style.lineHeight=this.value/100;lhv.textContent=(this.value/100).toFixed(2)">
+    </div>
+    <div class="set-row"><label>ความกว้างคอลัมน์ — <span id="wv">640</span>px</label>
+      <input type="range" min="420" max="900" value="640" oninput="rp.style.maxWidth=this.value+'px';wv.textContent=this.value">
+    </div>
+    <div class="set-row" style="margin-bottom:0">
+      <label>การจัดหน้า</label>
+      <div class="seg">
+        <button class="on">เลื่อน</button><button>พลิกหน้า</button><button>สองหน้า</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hl-menu" id="hlm">
+    <button class="sw" style="background:#ffd43b" onclick="hl('')"></button>
+    <button class="sw" style="background:#69db7c" onclick="hl('g')"></button>
+    <button class="sw" style="background:#74c0fc" onclick="hl('')"></button>
+    <button class="sw" style="background:#f783ac" onclick="hl('')"></button>
+    <div class="div"></div>
+    <button class="act" onclick="toast('เพิ่มโน้ต')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></button>
+    <button class="act" onclick="toast('คัดลอกแล้ว')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+  </div>
+
+  <div class="r-body" onmouseup="showHl(event)">
+    <div class="r-page" id="rp">
+      <h2>บทที่ 5 — การหลอกลวงครั้งใหญ่ที่สุดในประวัติศาสตร์</h2>
+      <p>เป็นเวลา 2.5 ล้านปีที่มนุษย์หาอาหารด้วยการเก็บพืชและล่าสัตว์ที่ดำรงชีวิตและขยายพันธุ์เองโดยปราศจากการแทรกแซงจากมนุษย์ <em>Homo erectus</em> ในเอเชียตะวันออก มนุษย์นีแอนเดอร์ทัลในยุโรป และ <em>Homo sapiens</em> ในแอฟริกา ล้วนเก็บเห็ดป่า ขุดรากไม้ ไล่จับกระต่าย และล่าควายป่า</p>
+      <p>แล้วราวหมื่นปีก่อน มนุษย์ก็เริ่มทุ่มเทเวลาและความพยายามเกือบทั้งหมดไปกับการควบคุมชีวิตของพืชและสัตว์เพียงไม่กี่ชนิด <mark>นักวิชาการเคยประกาศว่าการปฏิวัติเกษตรกรรมคือก้าวกระโดดครั้งใหญ่ของมนุษยชาติ แต่เรื่องเล่านี้เป็นเพียงจินตนาการ</mark> ไม่มีหลักฐานว่ามนุษย์ฉลาดขึ้นเมื่อเวลาผ่านไป</p>
+      <p>การปฏิวัติเกษตรกรรมทำให้อาหารที่มนุษย์ผลิตได้เพิ่มขึ้นมหาศาลจริง แต่อาหารที่มากขึ้นไม่ได้แปลว่าชีวิตดีขึ้น <mark class="g">มันกลับนำไปสู่การระเบิดของจำนวนประชากรและชนชั้นนำที่เอาแต่ใจ ชาวนาโดยเฉลี่ยทำงานหนักกว่านักเก็บของป่าโดยเฉลี่ย และได้อาหารที่แย่กว่าเป็นการตอบแทน</mark></p>
+      <p>นี่คือแก่นของการปฏิวัติเกษตรกรรม: ความสามารถในการเลี้ยงคนได้มากขึ้นภายใต้สภาพความเป็นอยู่ที่แย่ลง แล้วทำไมการคำนวณจึงผิดพลาด? เพราะไม่มีใครวางแผนการปฏิวัติเกษตรกรรมหรือแสวงหาการพึ่งพาการเพาะปลูกธัญพืช มันเป็นชุดของเหตุการณ์เล็กๆ ที่แต่ละอย่างมุ่งเพียงให้ท้องอิ่มขึ้นอีกนิดและปลอดภัยขึ้นอีกหน่อย</p>
+      <p>คนรุ่นแล้วรุ่นเล่าทำสิ่งที่ดูสมเหตุสมผลในระยะสั้น แต่ผลรวมกลับผูกมัดลูกหลานไว้กับผืนดิน <mark>เราไม่ได้ทำให้ข้าวสาลีเชื่อง — ข้าวสาลีต่างหากที่ทำให้เราเชื่อง</mark> คำว่า "ทำให้เชื่อง" ในภาษาอังกฤษมาจากภาษาละติน <em>domus</em> ซึ่งแปลว่า "บ้าน" แต่ใครกันแน่ที่อยู่ในบ้าน?</p>
+      <p>ลองมองจากมุมของข้าวสาลี เมื่อหมื่นปีก่อนมันเป็นเพียงหญ้าป่าชนิดหนึ่งที่ขึ้นอยู่ในตะวันออกกลางเท่านั้น แต่ภายในไม่กี่พันปีมันแผ่ขยายไปทั่วโลก จากมุมมองของวิวัฒนาการที่วัดด้วยจำนวนสำเนา DNA ข้าวสาลีคือผู้ชนะที่ยิ่งใหญ่ที่สุดในประวัติศาสตร์</p>
+    </div>
+  </div>
+
+  <div class="r-bot">
+    <span>บทที่ 5 จาก 20</span>
+    <div class="r-track" onclick="toast('กระโดดไปตำแหน่งที่เลือก')"><i></i></div>
+    <span>42% · เหลืออีกราว 5 ชม 40 น</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COVERS=[
+ ['#e07a5f','#3d405b'],['#2a9d8f','#264653'],['#e9c46a','#f4a261'],['#6a4c93','#1982c4'],
+ ['#ff595e','#8ac926'],['#264653','#2a9d8f'],['#f72585','#7209b7'],['#3a86ff','#8338ec'],
+ ['#fb8500','#023047'],['#06d6a0','#118ab2'],['#ef476f','#ffd166'],['#540b0e','#9e2a2b']];
+
+const BOOKS=[
+ {t:'Sapiens: A Brief History of Humankind',a:'Yuval Noah Harari',f:'EPUB',p:68,dl:1},
+ {t:'Clean Code',a:'Robert C. Martin',f:'PDF',p:34,dl:1},
+ {t:'พีชคณิตของความคิด',a:'ธนา เธียรอัจฉริยะ',f:'EPUB',p:12,dl:0},
+ {t:'Designing Data-Intensive Applications',a:'Martin Kleppmann',f:'PDF',p:81,dl:1},
+ {t:'The Pragmatic Programmer',a:'Hunt & Thomas',f:'EPUB',p:55,dl:0},
+ {t:'Thinking, Fast and Slow',a:'Daniel Kahneman',f:'EPUB',p:23,dl:0}];
+
+const RECENT=[
+ {t:'Refactoring UI',a:'Adam Wathan',f:'PDF',p:0,dl:1},
+ {t:'One Piece Vol. 105',a:'Eiichiro Oda',f:'CBZ',p:0,dl:1},
+ {t:'Atomic Habits',a:'James Clear',f:'EPUB',p:0,dl:0},
+ {t:'ปรัชญาชีวิตแบบสโตอิก',a:'William B. Irvine',f:'EPUB',p:5,dl:0},
+ {t:'System Design Interview',a:'Alex Xu',f:'PDF',p:0,dl:1},
+ {t:'The Three-Body Problem',a:'Liu Cixin',f:'EPUB',p:0,dl:0},
+ {t:'Rust for Rustaceans',a:'Jon Gjengset',f:'EPUB',p:0,dl:0},
+ {t:'สงครามที่ไม่มีวันชนะ',a:'ชัยวัฒน์ สถาอานันท์',f:'PDF',p:0,dl:0}];
+
+const grad=i=>`linear-gradient(150deg,${COVERS[i%12][0]},${COVERS[i%12][1]})`;
+
+function card(b,i){
+ return `<div class="card" onclick="openBook('${b.t.replace(/'/g,"")}','${b.a}',${i})">
+  <div class="cover-wrap">
+   <div class="cover" style="background:${grad(i)}">
+    <div></div>
+    <div><div class="cover-title">${b.t}</div><div class="cover-author">${b.a}</div></div>
+   </div>
+   <span class="fmt">${b.f}</span>
+   ${b.dl?`<span class="dl"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>`:''}
+   ${b.p?`<div class="prog"><i style="width:${b.p}%"></i></div>`:''}
+  </div>
+  <div class="meta">
+   <div class="m-title">${b.t}</div>
+   <div class="m-author">${b.a}</div>
+   ${b.p?`<div class="m-prog">อ่านแล้ว ${b.p}%</div>`:''}
+  </div>
+ </div>`;
+}
+function lrow(b,i){
+ return `<div class="lrow" onclick="openBook('${b.t.replace(/'/g,"")}','${b.a}',${i})">
+  <div class="lcover" style="background:${grad(i)}"></div>
+  <div class="lmain"><div class="lt">${b.t}</div><div class="la">${b.a}</div></div>
+  <span class="ltag">${b.f}</span>
+  <div class="lbar"><i style="width:${b.p}%"></i></div>
+  <span class="lpct">${b.p}%</span>
+ </div>`;
+}
+document.getElementById('grid-cont').innerHTML=BOOKS.map(card).join('');
+document.getElementById('grid-recent').innerHTML=RECENT.map((b,i)=>card(b,i+6)).join('');
+document.getElementById('list-recent').innerHTML=RECENT.map((b,i)=>lrow(b,i+6)).join('');
+
+const HLS=[
+ {c:'#ffd43b',b:'Sapiens',a:'Y. N. Harari',i:0,q:'เงินเป็นระบบความไว้วางใจร่วมกันที่มนุษย์เคยประดิษฐ์ขึ้น และเป็นระบบความไว้วางใจที่เป็นสากลที่สุด',n:''},
+ {c:'#4ecdc4',b:'Clean Code',a:'R. C. Martin',i:1,q:'อัตราส่วนเวลาที่ใช้อ่านโค้ดต่อเวลาที่ใช้เขียนมากกว่า 10 ต่อ 1 เราอ่านโค้ดเก่าตลอดเวลาเพื่อจะเขียนโค้ดใหม่',n:'ใช้เปิดสไลด์ตอนสอนน้องใหม่'},
+ {c:'#a78bfa',b:'DDIA',a:'M. Kleppmann',i:3,q:'ระบบที่เชื่อถือได้ไม่ได้แปลว่าไม่มีวันพัง แต่แปลว่าพังแล้วยังทำงานต่อได้อย่างที่ผู้ใช้คาดหวัง',n:''},
+ {c:'#ff6b6b',b:'Thinking, Fast and Slow',a:'D. Kahneman',i:5,q:'ไม่มีอะไรในชีวิตสำคัญเท่าที่คุณคิดตอนที่คุณกำลังคิดถึงมันอยู่',n:'focusing illusion — เอาไปใช้กับการตัดสินใจเรื่องงานได้'},
+ {c:'#ffd43b',b:'Sapiens',a:'Y. N. Harari',i:0,q:'เราไม่ได้ทำให้ข้าวสาลีเชื่อง — ข้าวสาลีต่างหากที่ทำให้เราเชื่อง',n:''},
+ {c:'#4ecdc4',b:'The Pragmatic Programmer',a:'Hunt & Thomas',i:4,q:'อย่าอยู่กับหน้าต่างที่แตก — ซ่อมโค้ดที่แย่ทันทีที่เห็น ไม่งั้นทั้งระบบจะเน่าตามกัน',n:''}];
+
+document.getElementById('hl-grid').innerHTML=HLS.map(h=>`
+ <div class="hl-card" style="border-left-color:${h.c}">
+  <div class="src"><i style="background:${grad(h.i)}"></i><div><b>${h.b}</b><span>${h.a}</span></div></div>
+  <q>"${h.q}"</q>
+  ${h.n?`<div class="hl" style="border-color:${h.c};margin:11px 0 0"><div class="n" style="border:none;margin:0;padding:0">💬 ${h.n}</div></div>`:''}
+  <div class="foot"><span>ตำแหน่ง 2,104</span>·<span>12 มี.ค. 2026</span></div>
+ </div>`).join('');
+
+// nav
+document.querySelectorAll('[data-page]').forEach(el=>el.addEventListener('click',()=>{
+ go(el.dataset.page);
+ if(el.classList.contains('nav-item')){
+   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+   el.classList.add('active');
+ }
+}));
+function go(p){
+ document.querySelectorAll('.page').forEach(s=>s.classList.remove('active'));
+ document.getElementById('p-'+p).classList.add('active');
+ document.querySelector('.content').scrollTop=0;
+}
+function openBook(t,a,i){
+ document.getElementById('d-title').textContent=t;
+ document.getElementById('d-author').textContent=a;
+ document.getElementById('d-cover').style.background=grad(i);
+ document.getElementById('hero').style.background=grad(i);
+ document.getElementById('r-title').textContent=t;
+ go('book');
+}
+function setView(v,btn){
+ document.querySelectorAll('.view-toggle button').forEach(b=>b.classList.remove('on'));
+ btn.classList.add('on');
+ document.getElementById('grid-recent').classList.toggle('off',v==='list');
+ document.getElementById('list-recent').classList.toggle('on',v==='list');
+}
+function openReader(){document.getElementById('reader').classList.add('on')}
+function closeReader(){document.getElementById('reader').classList.remove('on');document.getElementById('rset').classList.remove('on');document.getElementById('hlm').classList.remove('on')}
+function setTheme(t,btn){
+ const r=document.getElementById('reader');
+ r.className='reader on'+(t?' '+t:'');
+ document.querySelectorAll('.theme-sw').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+}
+function setFont(f,btn){rp.style.fontFamily=f;btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}
+function showHl(e){
+ const s=window.getSelection();
+ const m=document.getElementById('hlm');
+ if(s && s.toString().trim().length>3){
+   const r=s.getRangeAt(0).getBoundingClientRect();
+   m.style.left=(r.left+r.width/2)+'px';m.style.top=(r.top-48)+'px';m.style.transform='translateX(-50%)';
+   m.classList.add('on');
+ } else m.classList.remove('on');
+}
+function hl(cls){
+ const s=window.getSelection();
+ if(s.rangeCount){
+   const mk=document.createElement('mark');
+   if(cls)mk.className=cls;
+   try{s.getRangeAt(0).surroundContents(mk)}catch(e){}
+   s.removeAllRanges();
+ }
+ document.getElementById('hlm').classList.remove('on');
+ toast('บันทึกไฮไลต์ลง Google Drive แล้ว');
+}
+let tt;
+function toast(msg){
+ const t=document.getElementById('toast');
+ t.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4ecdc4" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>${msg}`;
+ t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2600);
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeReader()});
+document.addEventListener('click',e=>{
+ if(!e.target.closest('.r-settings')&&!e.target.closest('.icon-btn'))document.getElementById('rset').classList.remove('on');
+});
+</script>
+</body>
+</html>

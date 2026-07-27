@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #191d44;
+  --color-navy-2: #232a5c;
+  --color-navy-3: #2e3672;
+  --color-accent: #4ecdc4;
+  --color-accent-d: #3ab5ac;
+  --color-coral: #ff6b6b;
+  --color-shell: #f5f6fa;
+  --color-ink: #1a1c2e;
+  --color-muted: #8b90a8;
+  --color-line: #e6e8f0;
+}
+
+html, body { height: 100%; }
+body { background: var(--color-shell); color: var(--color-ink); }
+
+/* ธีมของ reader — ฉีดเข้า iframe ของ epub.js ผ่าน rendition.themes */
+.reader-sepia { background: #f4ecd8; }
+.reader-dark  { background: #16181f; color: #c6c9d4; }
