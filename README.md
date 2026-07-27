@@ -11,6 +11,7 @@
 
 อ่านรายละเอียดการออกแบบเต็มที่ [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 ดูหน้าตา UI ที่คลิกเล่นได้ที่ [`mockup.html`](./mockup.html)
+ขั้นตอน deploy ขึ้น Vercel + ตั้ง Google OAuth: [`DEPLOY.md`](./DEPLOY.md)
 
 ## เริ่มใช้งาน
 

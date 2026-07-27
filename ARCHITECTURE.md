@@ -403,7 +403,7 @@ bookdrive/
 ## 11. ข้อควรระวัง
 
 1. **CORS** — เรียก `googleapis.com` ตรงจากเบราว์เซอร์ไม่ได้ (สำหรับ download ที่ต้องใช้ header auth) ต้องผ่าน route handler เสมอ
-2. **ไฟล์ใหญ่** — EPUB/PDF บางเล่ม 100+ MB ให้ route handler ใช้ `ReadableStream` ไม่ใช่ buffer ทั้งก้อน และ Vercel มี limit 4.5 MB บน response ของ Serverless Function → **ต้องใช้ Edge Runtime แบบ streaming** หรือ redirect ไป signed download URL
+2. **ไฟล์ใหญ่** — EPUB/PDF บางเล่ม 100+ MB ให้ route handler ใช้ `ReadableStream` ไม่ใช่ buffer ทั้งก้อน Vercel จำกัด response 4.5 MB เฉพาะ **response ที่ไม่ stream** เท่านั้น ถ้า stream ตั้งแต่ต้น (อย่างที่ `api/drive/file/[id]` ทำ) จะไม่ติด limit นี้ ไม่ว่าจะรันบน Node หรือ Edge runtime — แต่ยังต้องระวัง max duration ของ plan ที่ใช้
 3. **MOBI** — ไม่มี lib JS ที่ดีจริง แนะนำแปลงเป็น EPUB ตอน ingest ด้วย `foliate-js` หรือบอกผู้ใช้ให้แปลงเอง
 4. **DRM** — ไฟล์ที่มี Adobe DRM เปิดไม่ได้ ต้องตรวจแล้วแจ้งผู้ใช้ให้ชัด อย่าพยายามถอด
 5. **Google verification** — แอปที่ใช้ Drive scope ต้องผ่าน OAuth verification ก่อนเกิน 100 ผู้ใช้ ยื่นเนิ่นๆ (ใช้เวลา 2–6 สัปดาห์)
