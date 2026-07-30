@@ -246,6 +246,7 @@ Google Picker ถูกถอดออกตอนเปลี่ยนไปใ
 | ทำงานบน production แต่ preview พัง | URL preview เปลี่ยนทุก commit | ดูหัวข้อถัดไป |
 | สแกนเจอ 0 เล่มทั้งที่โฟลเดอร์มีหนังสือ | scope ยังเป็น `drive.file` | เพิ่ม `drive.readonly` (ขั้น 3.3) แล้ว **ออกจากระบบและล็อกอินใหม่** เพื่อขอ consent รอบใหม่ |
 | อยู่ ๆ ก็หลุดล็อกอินหลังผ่านไปหลายวัน | Testing mode ทำให้ refresh token อายุ 7 วัน | ล็อกอินใหม่ — เลี่ยงไม่ได้จนกว่าจะ publish + ผ่าน CASA |
+| ปกไม่ขึ้น / `/api/drive/file/...` คืน 500 | route ส่งต่อ `Content-Length` จาก Drive | `fetch` คลาย gzip แล้ว จำนวนไบต์จริงไม่ตรงกับที่ประกาศ Node จะพังตอนปิด stream — อย่าส่งต่อ header นี้ |
 | หลุด logout เรื่อยๆ หลังผ่านไปสักพัก | ไม่ได้ refresh token | ตรวจว่า `access_type: 'offline'` ยังอยู่ใน `lib/auth.ts` |
 
 ---

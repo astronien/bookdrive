@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import type { Book } from '@/lib/types';
 
@@ -15,8 +16,9 @@ function hashOf(s: string) {
 }
 
 export default function BookCard({ book }: { book: Book }) {
+  const [coverFailed, setCoverFailed] = useState(false);
   const [a, b] = PALETTES[hashOf(book.id) % PALETTES.length];
-  const cover = book.coverFileId ? `/api/drive/file/${book.coverFileId}` : null;
+  const cover = book.coverFileId && !coverFailed ? `/api/drive/file/${book.coverFileId}` : null;
   const formats = [...new Set(book.files.map((f) => f.format))];
 
   return (
@@ -24,7 +26,14 @@ export default function BookCard({ book }: { book: Book }) {
       <div className="relative aspect-[2/3] overflow-hidden rounded-[9px] shadow-[0_4px_16px_rgba(25,29,68,.10)] transition duration-200 group-hover:-translate-y-1 group-hover:shadow-[0_12px_40px_rgba(25,29,68,.20)]">
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover} alt={book.title} loading="lazy" className="h-full w-full object-cover" />
+          <img
+            src={cover}
+            alt={book.title}
+            loading="lazy"
+            decoding="async"
+            onError={() => setCoverFailed(true)}
+            className="h-full w-full object-cover"
+          />
         ) : (
           <div
             className="flex h-full flex-col justify-end p-3.5 text-white"
