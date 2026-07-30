@@ -68,6 +68,22 @@ export async function POST(req: Request) {
     const { folderId } = (await req.json()) as { folderId?: string };
     if (!folderId) return NextResponse.json({ error: 'ไม่ได้ระบุ folderId' }, { status: 400 });
 
+    // 0) เช็คก่อนว่าแอปเข้าถึงโฟลเดอร์นี้ได้จริงไหม
+    //    scope drive.file ให้สิทธิ์เป็นราย ๆ ไป ถ้า Picker ไม่ได้ mount สิทธิ์ให้
+    //    (เช่น ลืม setAppId) files.get จะคืน 404 ทั้งที่ผู้ใช้เลือกโฟลเดอร์นั้นมาเอง
+    try {
+      await driveJson<{ id: string }>(`/files/${folderId}?fields=id,name&supportsAllDrives=true`);
+    } catch {
+      return NextResponse.json(
+        {
+          error:
+            'แอปยังไม่มีสิทธิ์เข้าถึงโฟลเดอร์นี้ — ลองกด "เปลี่ยนโฟลเดอร์" แล้วเลือกใหม่อีกครั้ง ' +
+            '(scope drive.file ให้สิทธิ์เฉพาะสิ่งที่เลือกผ่าน Picker เท่านั้น)',
+        },
+        { status: 403 }
+      );
+    }
+
     // 1) ไล่หาโฟลเดอร์ทั้งหมดใต้ root แบบ BFS (Calibre ลึก 2 ชั้น แต่เผื่อไว้ 5)
     const allFolders: DriveEntry[] = [];
     let frontier = [folderId];

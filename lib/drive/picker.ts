@@ -59,6 +59,10 @@ export async function pickFolder(): Promise<PickedFolder | null> {
     client.requestAccessToken({ prompt: '' });
   });
 
+  // project number — Drive ใช้ระบุว่าจะมอบสิทธิ์ไฟล์ที่เลือกให้แอปไหน
+  // client ID ขึ้นต้นด้วย project number อยู่แล้ว จึงไม่ต้องเพิ่ม env var
+  const appId = clientId.split('-')[0];
+
   return new Promise((resolve) => {
     const g = (window as any).google;
     const view = new g.picker.DocsView(g.picker.ViewId.FOLDERS)
@@ -70,6 +74,10 @@ export async function pickFolder(): Promise<PickedFolder | null> {
       .setTitle('เลือกโฟลเดอร์ Calibre library')
       .setOAuthToken(token)
       .setDeveloperKey(apiKey)
+      // ห้ามลืม: ถ้าไม่มี setAppId ผู้ใช้จะเลือกโฟลเดอร์ได้ตามปกติและ Picker คืน id มาให้
+      // แต่ Drive จะไม่ mount สิทธิ์ให้แอปเลย แล้วไปพังเงียบๆ ตอน files.list (404)
+      .setAppId(appId)
+      .setOrigin(window.location.origin)
       .addView(view)
       .setCallback((data: any) => {
         if (data.action === g.picker.Action.PICKED) {

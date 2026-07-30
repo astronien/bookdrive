@@ -238,6 +238,8 @@ https://<DOMAIN>/api/auth/callback/google
 | ล็อกอินได้ แต่ Picker ไม่เปิด | `NEXT_PUBLIC_*` ยังเป็นค่าเก่า | redeploy โดยปิด build cache (2.4) |
 | ล็อกอินได้ แต่สแกนแล้วไม่เจอไฟล์ | ยังไม่ได้เปิด Google Drive API | ขั้น 3.1 |
 | ทำงานบน production แต่ preview พัง | URL preview เปลี่ยนทุก commit | ดูหัวข้อถัดไป |
+| Picker: `The API developer key is invalid` | referrer ของ key ไม่ตรงโดเมนจริง | แก้ Website restrictions ให้ตรง หรือถ้ายังพังให้ตั้ง Application restrictions = None ชั่วคราวเพื่อยืนยันสาเหตุ |
+| Picker เลือกโฟลเดอร์ได้ แต่สแกนเจอ 0 เล่ม | ลืม `setAppId` ใน PickerBuilder | Drive จะไม่มอบสิทธิ์ให้แอปเลย ทั้งที่ผู้ใช้เลือกแล้ว — `files.get` คืน 404 ต้องใส่ project number ผ่าน `.setAppId()` |
 | หลุด logout เรื่อยๆ หลังผ่านไปสักพัก | ไม่ได้ refresh token | ตรวจว่า `access_type: 'offline'` ยังอยู่ใน `lib/auth.ts` |
 
 ---
