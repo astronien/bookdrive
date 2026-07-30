@@ -2,12 +2,28 @@ export type BookFormat = 'epub' | 'pdf' | 'cbz' | 'cbr' | 'mobi' | 'txt';
 export type BookStatus = 'unread' | 'reading' | 'finished' | 'abandoned';
 export type HighlightColor = 'yellow' | 'green' | 'blue' | 'pink' | 'purple';
 
-export interface Book {
-  id: string;
+/** ไฟล์หนึ่งฟอร์แมตของหนังสือเล่มหนึ่ง — Calibre เก็บ epub/pdf/mobi ไว้โฟลเดอร์เดียวกัน */
+export interface BookFile {
   driveFileId: string;
-  driveModifiedTime: string;
   format: BookFormat;
   size: number;
+  name: string;
+  modifiedTime: string;
+}
+
+export interface Book {
+  id: string;
+  /** flat = โฟลเดอร์ BookDrive/Books แบนชั้นเดียว · calibre = Calibre library */
+  source: 'flat' | 'calibre';
+
+  /** ไฟล์ทุกฟอร์แมตของเล่มนี้ เรียงตามลำดับที่แนะนำให้อ่าน */
+  files: BookFile[];
+  /** ฟอร์แมตที่ผู้ใช้เลือกไว้ล่าสุด (ถ้าไม่ตั้ง ใช้ files[0]) */
+  preferredFormat?: BookFormat;
+
+  /** เฉพาะ Calibre */
+  calibreId?: number;
+  folderId?: string;
 
   title: string;
   authors: string[];
@@ -31,10 +47,27 @@ export interface Book {
   percent: number;
 }
 
+/** ไฟล์ที่ควรเปิดสำหรับเล่มนี้ */
+export function pickFile(book: Book): BookFile | undefined {
+  if (book.preferredFormat) {
+    const f = book.files.find((x) => x.format === book.preferredFormat);
+    if (f) return f;
+  }
+  return book.files[0];
+}
+
+/** ลำดับความเหมาะสมในการอ่านบนเว็บ — EPUB ก่อนเสมอเพราะ reflow ได้ */
+export const FORMAT_RANK: Record<BookFormat, number> = {
+  epub: 0, pdf: 1, cbz: 2, cbr: 3, txt: 4, mobi: 5,
+};
+
 export interface Library {
-  version: 2;
+  version: 3;
   updatedAt: string;
   deviceId: string;
+  /** โฟลเดอร์ Calibre library ที่ผูกไว้ (ได้จาก Google Picker) */
+  calibreFolderId?: string;
+  calibreFolderName?: string;
   books: Book[];
 }
 

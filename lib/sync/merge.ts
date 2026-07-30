@@ -70,9 +70,12 @@ export function mergeLibrary(local: Library, remote: Library): Library {
     map.set(b.id, newer(localTouched, remoteTouched) ? b : prev);
   }
   return {
-    version: 2,
+    version: 3,
     updatedAt: new Date().toISOString(),
     deviceId: local.deviceId,
+    // การผูกโฟลเดอร์เป็นค่าของบัญชี ไม่ใช่ของเครื่อง — ตัวไหนมีก็ใช้ตัวนั้น
+    calibreFolderId: local.calibreFolderId ?? remote.calibreFolderId,
+    calibreFolderName: local.calibreFolderName ?? remote.calibreFolderName,
     books: [...map.values()],
   };
 }

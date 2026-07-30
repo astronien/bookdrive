@@ -4,8 +4,8 @@
 
 | | |
 |---|---|
-| ไฟล์หนังสือ | `My Drive/BookDrive/Books/` (ผู้ใช้ลากไฟล์ใส่เองได้) |
-| ปก | `My Drive/BookDrive/Covers/` |
+| ไฟล์หนังสือ | **Calibre library เดิมของคุณใน Drive** (อ่านอย่างเดียว ไม่แตะต้อง) |
+| ปก + metadata | `cover.jpg` / `metadata.opf` ที่ Calibre วางไว้ให้อยู่แล้ว |
 | metadata, progress, ไฮไลต์ | `appDataFolder` (พื้นที่ซ่อนของแอป) |
 | เซิร์ฟเวอร์ | stateless proxy ล้วน — ถือแค่ OAuth token |
 
@@ -53,13 +53,14 @@ lib/
 ## สถานะ
 
 - [x] OAuth + refresh token
-- [x] สแกนโฟลเดอร์ Drive → สร้างไลบรารี
+- [x] เชื่อม Calibre library ผ่าน Google Picker → สแกนแบบ batch → อ่าน metadata.opf
+- [x] รวมหลายฟอร์แมตของเล่มเดียวกันเป็นการ์ดเดียว สลับตอนเปิดอ่าน
 - [x] EPUB reader + บันทึกตำแหน่งอ่าน (CFI)
 - [x] Sync engine + conflict merge
 - [x] Cache ออฟไลน์ (IndexedDB)
 - [ ] PDF reader (pdf.js virtualized)
-- [ ] Highlights UI + หน้ารวมไฮไลต์
-- [ ] Google Picker (เลือกโฟลเดอร์เอง)
+- [x] หน้า /settings และ /highlights
+- [ ] UI ไฮไลต์ในหน้าอ่าน (หน้ารวมพร้อมแล้ว รอตัวที่สร้างข้อมูล)
 - [ ] Service Worker / PWA
 - [ ] CBZ/CBR, TTS, export Markdown
 

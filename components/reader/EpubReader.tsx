@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { db, getBookBlob } from '@/lib/db/idb';
 import { useLibrary } from '@/lib/store/library';
-import type { Book, Progress } from '@/lib/types';
+import type { Book, BookFile, Progress } from '@/lib/types';
 
 export type ReaderTheme = 'light' | 'sepia' | 'dark';
 
@@ -14,8 +14,8 @@ const THEMES: Record<ReaderTheme, Record<string, any>> = {
 };
 
 export default function EpubReader({
-  book, theme = 'light', fontSize = 18,
-}: { book: Book; theme?: ReaderTheme; fontSize?: number }) {
+  book, file, theme = 'light', fontSize = 18,
+}: { book: Book; file: BookFile; theme?: ReaderTheme; fontSize?: number }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const renditionRef = useRef<any>(null);
   const [status, setStatus] = useState('กำลังโหลด…');
@@ -29,7 +29,7 @@ export default function EpubReader({
       // epubjs แตะ window ตอน import — โหลดแบบ dynamic เท่านั้น
       const ePub = (await import('epubjs')).default;
 
-      const blob = await getBookBlob(book.driveFileId);
+      const blob = await getBookBlob(file.driveFileId);
       if (destroyed) return;
 
       bookObj = ePub(await blob.arrayBuffer());
@@ -74,7 +74,7 @@ export default function EpubReader({
       destroyed = true;
       bookObj?.destroy?.();
     };
-  }, [book.id, book.driveFileId, saveProgress]);
+  }, [book.id, file.driveFileId, saveProgress]);
 
   // เปลี่ยนธีม/ขนาดตัวอักษรโดยไม่ต้อง re-render ทั้งเล่ม
   useEffect(() => {

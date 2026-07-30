@@ -51,22 +51,36 @@
 
 ใช้ **2 พื้นที่** ที่มีบทบาทต่างกัน:
 
-### 2.1 โฟลเดอร์ที่ผู้ใช้เห็น — `BookDrive/`
+### 2.1 แหล่งหนังสือ — Calibre library (โหมดหลัก)
+
+BookDrive อ่านจาก **Calibre library ที่มีอยู่แล้ว** ใน Drive โดยตรง ไม่บังคับให้ย้ายไฟล์
 
 ```
 My Drive/
-└── BookDrive/
-    ├── Books/
-    │   ├── sapiens.epub
-    │   ├── clean-code.pdf
-    │   └── one-piece-vol1.cbz
-    └── Covers/            ← สร้างอัตโนมัติ (thumbnail 400px)
-        ├── <bookId>.jpg
-        └── ...
+└── Calibre Library/
+    ├── metadata.db                    ← ไม่ได้ใช้ (ดูหมายเหตุ)
+    └── Yuval Noah Harari/
+        └── Sapiens (142)/
+            ├── Sapiens - Yuval Noah Harari.epub
+            ├── Sapiens - Yuval Noah Harari.pdf   ← เล่มเดียวกัน คนละฟอร์แมต
+            ├── cover.jpg
+            └── metadata.opf
 ```
 
-ผู้ใช้ลากไฟล์ใส่ `Books/` จาก Drive โดยตรงได้ → แอปจะเจอตอน scan ครั้งถัดไป
-นี่คือข้อได้เปรียบเหนือ BookFusion: **ไม่ต้องอัปโหลดผ่านแอป**
+**อ่าน `metadata.opf` ไม่ใช่ `metadata.db`** — Calibre เขียน opf ทิ้งไว้ทุกโฟลเดอร์หนังสือ
+และในนั้นมี title, authors, series + series_index, tags, rating, ISBN, publisher, description ครบ
+ได้ข้อมูลเกือบเท่า db โดยไม่ต้องโหลด sql.js (~1 MB wasm) และไม่ต้องดาวน์โหลดตัว db ทั้งก้อน
+
+**หนึ่งโฟลเดอร์ = หนึ่งเล่ม** ไฟล์หลายฟอร์แมตในโฟลเดอร์เดียวกันถูกยุบเป็น `Book` เดียวที่มี
+`files: BookFile[]` แล้วให้ผู้ใช้สลับฟอร์แมตตอนเปิดอ่าน เหมือนที่ Calibre ทำ
+
+**อ่านอย่างเดียว** ไม่เขียนอะไรกลับเข้าโฟลเดอร์ Calibre เด็ดขาด — ถ้าไปแก้ `metadata.db`
+หรือ `metadata.opf` จะชนกับตัว Calibre เองตอนผู้ใช้เปิดโปรแกรมที่เครื่อง แล้วพังทั้งไลบรารีได้
+progress/ไฮไลต์ทั้งหมดจึงอยู่ใน `appDataFolder` แยกต่างหาก
+
+**การให้สิทธิ์** scope `drive.file` มองไม่เห็นไฟล์ที่มีอยู่ก่อน ผู้ใช้ต้องเลือกโฟลเดอร์ผ่าน
+**Google Picker** ครั้งเดียว ซึ่งเป็นการมอบสิทธิ์โฟลเดอร์นั้นและทุกอย่างข้างในให้แอปอย่างถาวร
+(ดังนั้น `NEXT_PUBLIC_GOOGLE_API_KEY` เป็นของบังคับ ไม่ใช่ของเสริม)
 
 ### 2.2 `appDataFolder` — พื้นที่ซ่อนของแอป
 
@@ -258,26 +272,27 @@ Drive API ให้ 12,000 queries / นาที / user — เหลือเ�
 
 ---
 
-## 5. Ingest Pipeline (เพิ่มหนังสือใหม่)
+## 5. Ingest Pipeline (สแกน Calibre library)
 
 ```
-1. scan   — files.list ในโฟลเดอร์ Books, กรอง mimeType ที่รองรับ
-2. diff   — ตัด driveFileId ที่มีใน library.json อยู่แล้วออก
-3. parse  — ดาวน์โหลดไฟล์ (client-side) แล้วแตก metadata
-             EPUB → อ่าน META-INF/container.xml → OPF → title/author/cover
-             PDF  → pdf.js getMetadata() + render หน้า 1 เป็นปก
-             CBZ  → unzip, เอาภาพแรกเป็นปก
-4. cover  — resize เป็น 400px JPEG q80 ด้วย canvas → อัปโหลดเข้า Covers/
-5. commit — append เข้า library.json แล้ว sync
+1. walk    — BFS หาโฟลเดอร์ทั้งหมดใต้ library root
+             ยิง files.list แบบ batch ครั้งละ 30 parents (`'a' in parents or 'b' in parents ...`)
+             ทำขนานทีละ 4 ชุด — ไลบรารี 1,000 เล่มใช้ราว 60 request
+2. group   — โฟลเดอร์ไหนมีไฟล์อีบุ๊ก ≥ 1 ไฟล์ = หนังสือหนึ่งเล่ม
+             เกณฑ์นี้ไม่ผูกกับ Author/Title/ เป๊ะๆ จึงรองรับไลบรารีที่ถูกจัดใหม่ด้วย
+3. diff    — ตัดโฟลเดอร์ที่มีใน library.json อยู่แล้วออก (เทียบด้วย Drive folderId)
+4. opf     — ดาวน์โหลด metadata.opf ของเล่มใหม่ ทีละ 8 ไฟล์พร้อมกัน พร้อมรายงานความคืบหน้า
+             ถ้า opf พังหรือไม่มี ถอยไปใช้ชื่อโฟลเดอร์ ("Sapiens (142)" -> "Sapiens")
+             และชื่อโฟลเดอร์แม่เป็นชื่อผู้เขียน
+5. cover   — ใช้ cover.jpg ที่ Calibre วางไว้ให้แล้ว ไม่ต้องแกะจาก EPUB
+6. commit  — append เข้า library.json แล้ว sync
 ```
 
-ทำฝั่ง client ทั้งหมด → เซิร์ฟเวอร์เป็น stateless proxy ล้วน โฮสต์บน Vercel free tier ได้
-ถ้าไลบรารีใหญ่มาก (>500 เล่ม) ให้ยัด step 3–4 ลง Web Worker พร้อมกัน 3 ไฟล์
+**ทำไมไม่ recursive แบบธรรมดา** Drive API ไม่มี query แบบ "ทุกอย่างใต้โฟลเดอร์นี้"
+ถ้าไล่ทีละโฟลเดอร์จะเป็น N+1 request (ไลบรารี 1,000 เล่ม = 1,200+ request)
+การ batch parent หลายตัวต่อ query ลดเหลือหลักสิบ
 
-**Metadata เสริม:** ถ้า EPUB ไม่มีข้อมูลครบ ยิง Open Library API ด้วย ISBN
-(`https://openlibrary.org/isbn/{isbn}.json`) — ฟรี ไม่ต้องใช้ API key
-
----
+**Metadata เสริม** ถ้า opf ไม่มี ISBN ยิง Open Library API (`https://openlibrary.org/isbn/{isbn}.json`)
 
 ## 6. Reader
 

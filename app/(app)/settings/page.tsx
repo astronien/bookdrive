@@ -38,7 +38,7 @@ export default async function SettingsPage() {
             </div>
             <div className="min-w-0">
               <b className="block truncate text-[13px]">{session?.user?.email}</b>
-              <span className="text-[11.5px] text-muted">โฟลเดอร์: My Drive / BookDrive / Books</span>
+              <span className="text-[11.5px] text-muted">โฟลเดอร์ที่เชื่อมไว้ดูได้ในหน้าไลบรารี</span>
             </div>
             <span className="ml-auto flex shrink-0 items-center gap-1.5 text-[11.5px] font-semibold text-[#0f9d58]">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">

@@ -1,0 +1,134 @@
+import { NextResponse } from 'next/server';
+import { driveJson, DriveError } from '@/lib/drive/client';
+import { MIME_TO_FORMAT, SUPPORTED_MIMES } from '@/lib/types';
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+
+interface DriveEntry {
+  id: string;
+  name: string;
+  mimeType: string;
+  size?: string;
+  modifiedTime: string;
+  parents?: string[];
+}
+
+const FOLDER = 'application/vnd.google-apps.folder';
+/** ใส่ parent ได้กี่ตัวต่อ 1 query — Drive จำกัดความยาว q ไว้ ใช้ 30 ให้ปลอดภัย */
+const BATCH = 30;
+
+async function listAll(q: string): Promise<DriveEntry[]> {
+  const out: DriveEntry[] = [];
+  let pageToken: string | undefined;
+  do {
+    const url =
+      `/files?q=${encodeURIComponent(q)}` +
+      `&fields=nextPageToken,files(id,name,mimeType,size,modifiedTime,parents)` +
+      `&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true` +
+      (pageToken ? `&pageToken=${pageToken}` : '');
+    const page = await driveJson<{ nextPageToken?: string; files: DriveEntry[] }>(url);
+    out.push(...page.files);
+    pageToken = page.nextPageToken;
+  } while (pageToken);
+  return out;
+}
+
+function parentsClause(ids: string[]) {
+  return '(' + ids.map((id) => `'${id}' in parents`).join(' or ') + ')';
+}
+
+/** ยิงทีละชุดแบบขนาน แต่ไม่เกิน 4 ชุดพร้อมกัน กัน rate limit */
+async function listByParents(ids: string[], extra: string): Promise<DriveEntry[]> {
+  const batches: string[][] = [];
+  for (let i = 0; i < ids.length; i += BATCH) batches.push(ids.slice(i, i + BATCH));
+
+  const out: DriveEntry[] = [];
+  for (let i = 0; i < batches.length; i += 4) {
+    const slice = batches.slice(i, i + 4);
+    const results = await Promise.all(
+      slice.map((b) => listAll(`${parentsClause(b)} and trashed=false and ${extra}`))
+    );
+    for (const r of results) out.push(...r);
+  }
+  return out;
+}
+
+/**
+ * POST /api/drive/calibre  { folderId }
+ *
+ * เดินโฟลเดอร์ทั้งต้นไม้ใต้ Calibre library แล้วคืนรายการ "โฟลเดอร์หนังสือ"
+ * (โฟลเดอร์ที่มีไฟล์อีบุ๊กอย่างน้อย 1 ไฟล์) พร้อมไฟล์ทั้งหมดในนั้น
+ *
+ * ไม่ล็อกว่าต้องเป็น Author/Book/ เป๊ะๆ — ใช้เกณฑ์ "โฟลเดอร์ไหนมีอีบุ๊กก็คือเล่มหนึ่ง"
+ * จึงรองรับทั้งโครงมาตรฐานของ Calibre และไลบรารีที่ถูกจัดใหม่
+ */
+export async function POST(req: Request) {
+  try {
+    const { folderId } = (await req.json()) as { folderId?: string };
+    if (!folderId) return NextResponse.json({ error: 'ไม่ได้ระบุ folderId' }, { status: 400 });
+
+    // 1) ไล่หาโฟลเดอร์ทั้งหมดใต้ root แบบ BFS (Calibre ลึก 2 ชั้น แต่เผื่อไว้ 5)
+    const allFolders: DriveEntry[] = [];
+    let frontier = [folderId];
+    for (let depth = 0; depth < 5 && frontier.length; depth++) {
+      const found = await listByParents(frontier, `mimeType='${FOLDER}'`);
+      allFolders.push(...found);
+      frontier = found.map((f) => f.id);
+    }
+
+    // 2) ดึงไฟล์ในทุกโฟลเดอร์ที่เจอ (รวม root ด้วย เผื่อมีไฟล์วางไว้ตรงนั้น)
+    const mimeQ = [...SUPPORTED_MIMES.map((m) => `mimeType='${m}'`), "name contains '.opf'", "name='cover.jpg'"]
+      .join(' or ');
+    const parentIds = [folderId, ...allFolders.map((f) => f.id)];
+    const files = await listByParents(parentIds, `(${mimeQ})`);
+
+    // 3) จัดกลุ่มตามโฟลเดอร์แม่
+    const byParent = new Map<string, DriveEntry[]>();
+    for (const f of files) {
+      for (const p of f.parents ?? []) {
+        const arr = byParent.get(p) ?? [];
+        arr.push(f);
+        byParent.set(p, arr);
+      }
+    }
+
+    const folderName = new Map(allFolders.map((f) => [f.id, f.name]));
+    const folderParent = new Map(allFolders.map((f) => [f.id, f.parents?.[0] ?? '']));
+
+    // 4) โฟลเดอร์ไหนมีอีบุ๊ก = เป็นหนังสือหนึ่งเล่ม
+    const bookFolders = [];
+    for (const [parentId, entries] of byParent) {
+      const ebooks = entries.filter((e) => MIME_TO_FORMAT[e.mimeType]);
+      if (!ebooks.length) continue;
+
+      const opf = entries.find((e) => e.name.toLowerCase().endsWith('.opf'));
+      const cover = entries.find((e) => e.name.toLowerCase() === 'cover.jpg');
+
+      bookFolders.push({
+        folderId: parentId,
+        folderName: folderName.get(parentId) ?? '',
+        authorFolderName: folderName.get(folderParent.get(parentId) ?? '') ?? '',
+        opfFileId: opf?.id,
+        coverFileId: cover?.id,
+        files: ebooks.map((e) => ({
+          driveFileId: e.id,
+          name: e.name,
+          format: MIME_TO_FORMAT[e.mimeType],
+          size: Number(e.size ?? 0),
+          modifiedTime: e.modifiedTime,
+        })),
+      });
+    }
+
+    return NextResponse.json({
+      folderId,
+      folderCount: allFolders.length,
+      bookCount: bookFolders.length,
+      books: bookFolders,
+    });
+  } catch (e) {
+    const err = e as DriveError;
+    return NextResponse.json({ error: err.message }, { status: err.status ?? 500 });
+  }
+}
