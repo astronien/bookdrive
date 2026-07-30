@@ -76,6 +76,35 @@ export interface Shelf {
   createdAt: string;
 }
 
+export interface Settings {
+  updatedAt: string;
+  /** สแกนโฟลเดอร์ Drive อัตโนมัติ */
+  autoScan: boolean;
+  /** ดึงปกจากไฟล์แล้วอัปเข้า BookDrive/Covers */
+  autoCover: boolean;
+  /** เติม metadata จาก Open Library ด้วย ISBN */
+  enrichMetadata: boolean;
+  /** สำรอง metadata เป็น backup.json ในโฟลเดอร์ปกติ (กันข้อมูลหายตอนถอนสิทธิ์) */
+  backupToDrive: boolean;
+  /** ดาวน์โหลดไฟล์เก็บไว้อ่านออฟไลน์เมื่อเริ่มอ่าน */
+  autoDownloadOnOpen: boolean;
+  /** ความถี่บันทึกความคืบหน้า (ms) */
+  progressIntervalMs: number;
+  /** ความถี่ตรวจการเปลี่ยนแปลงจากเครื่องอื่น (ms) */
+  changesPollMs: number;
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  updatedAt: '',
+  autoScan: true,
+  autoCover: true,
+  enrichMetadata: true,
+  backupToDrive: false,
+  autoDownloadOnOpen: true,
+  progressIntervalMs: 10_000,
+  changesPollMs: 60_000,
+};
+
 export const MIME_TO_FORMAT: Record<string, BookFormat> = {
   'application/epub+zip': 'epub',
   'application/pdf': 'pdf',
