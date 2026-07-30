@@ -5,6 +5,12 @@ export const DRIVE_SCOPES = [
   'openid',
   'email',
   'profile',
+  // restricted scope — จำเป็นเพราะ drive.file ให้สิทธิ์เฉพาะไฟล์ที่ผู้ใช้เลือกทีละอัน
+  // ผ่าน Picker และ "ไม่ลาม" ลงไปในโฟลเดอร์ลูก จึงสแกน Calibre library ที่มีอยู่ก่อนไม่ได้
+  // ผลข้างเคียง: แอปต้องอยู่ใน Testing mode (จำกัด 100 test user, token หมดอายุ 7 วัน)
+  // ถ้าจะขึ้น production จริงต้องผ่าน CASA Tier 2
+  'https://www.googleapis.com/auth/drive.readonly',
+  // ยังเก็บไว้เพื่อให้เส้นทางเขียนไฟล์ (อัปโหลดปก/สำรอง metadata) ใช้ได้ — readonly เขียนไม่ได้
   'https://www.googleapis.com/auth/drive.file',
   'https://www.googleapis.com/auth/drive.appdata',
 ].join(' ');

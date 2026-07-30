@@ -89,8 +89,9 @@ npx auth secret
 | `AUTH_SECRET` | ค่าจาก 2.1 | สร้างเอง |
 | `AUTH_GOOGLE_ID` | `xxx.apps.googleusercontent.com` | ขั้น 3.5 |
 | `AUTH_GOOGLE_SECRET` | `GOCSPX-xxx` | ขั้น 3.5 |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | ค่าเดียวกับ `AUTH_GOOGLE_ID` | ขั้น 3.5 |
-| `NEXT_PUBLIC_GOOGLE_API_KEY` | `AIzaSy...` | ขั้น 3.6 |
+
+> ~~`NEXT_PUBLIC_GOOGLE_CLIENT_ID`~~ / ~~`NEXT_PUBLIC_GOOGLE_API_KEY`~~ ไม่ต้องใช้แล้ว
+> เคยใช้กับ Google Picker ซึ่งถูกถอดออกตอนเปลี่ยนไปใช้ `drive.readonly` (ดูขั้น 3.3)
 
 **ทุกตัวติ๊กครบ 3 ช่อง: Production / Preview / Development**
 
@@ -154,15 +155,23 @@ UI ส่วนนี้ Google เปลี่ยนใหม่ (เดิม�
 openid
 .../auth/userinfo.email
 .../auth/userinfo.profile
-.../auth/drive.file        ← Google Drive API
-.../auth/drive.appdata     ← Google Drive API
+.../auth/drive.readonly    ← restricted — จำเป็น อ่านหมายเหตุด้านล่าง
+.../auth/drive.file
+.../auth/drive.appdata
 ```
 
 4. กด **Update** → **Save**
 
-> **ห้ามเผลอติ๊ก `.../auth/drive` หรือ `.../auth/drive.readonly`** สองตัวนี้เป็น *restricted scope*
-> ต้องผ่าน CASA security assessment (เสียเงิน + รอหลายสัปดาห์) ถึงจะเปิดใช้จริงได้
-> ส่วน `drive.file` + `drive.appdata` เป็น scope ธรรมดา ผ่านง่ายกว่ามาก
+> **`drive.readonly` เป็น restricted scope และเป็นทางเลือกที่ตั้งใจ ไม่ใช่ความเลินเล่อ**
+>
+> `drive.file` ให้สิทธิ์เฉพาะไฟล์ที่ผู้ใช้เลือกทีละอันผ่าน Picker และ **ไม่ลามลงไปในโฟลเดอร์ลูก**
+> (ยืนยันแล้วด้วยการทดสอบจริง: `files.get` โฟลเดอร์สำเร็จ แต่ `files.list` ของลูกคืน 0 รายการ)
+> จึงสแกน Calibre library ที่มีอยู่ก่อนแล้วไม่ได้เลย
+>
+> ผลที่ตามมา:
+> - แอปต้องอยู่ใน **Testing mode** ตลอด (จำกัด 100 test user)
+> - **refresh token ของ test user หมดอายุใน 7 วัน** ต้องล็อกอินใหม่ทุกสัปดาห์
+> - ถ้าจะเปิดสาธารณะต้องผ่าน **CASA Tier 2** ซึ่งเป็น audit ที่เสียเงินและใช้เวลาหลายสัปดาห์
 
 ### 3.4 เพิ่ม Test user (ห้ามข้าม)
 
@@ -200,14 +209,11 @@ https://<DOMAIN>/api/auth/callback/google
 > ถ้าผิดจะเจอ **`Error 400: redirect_uri_mismatch`** — ข้อความ error จะบอก URI ที่แอปส่งไป
 > คัดลอกจาก error ไปแปะใน console ได้เลย
 
-### 3.6 สร้าง API Key สำหรับ Picker
+### 3.6 ~~สร้าง API Key สำหรับ Picker~~ (ไม่ต้องแล้ว)
 
-1. หน้าเดิม **Clients** (หรือ **Credentials**) → **Create credentials** → **API key**
-2. คัดลอกค่าไปใส่ `NEXT_PUBLIC_GOOGLE_API_KEY`
-3. กด **Edit API key** เพื่อจำกัดสิทธิ์ (key นี้อยู่ในโค้ดฝั่ง client ใครก็เห็น):
-   - **Application restrictions** → Websites → ใส่ `https://<DOMAIN>/*` และ `http://localhost:3000/*`
-   - **API restrictions** → Restrict key → ติ๊กเฉพาะ **Google Picker API**
-4. **Save**
+Google Picker ถูกถอดออกตอนเปลี่ยนไปใช้ `drive.readonly` — การเลือกโฟลเดอร์ตอนนี้ใช้
+ช่องค้นหาที่ query Drive ตรง ๆ ผ่าน API ฝั่งเซิร์ฟเวอร์ ถ้าเคยสร้าง API key ไว้แล้ว
+ลบทิ้งได้เลย และไม่ต้องเปิด Google Picker API อีกต่อไป
 
 ### 3.7 Redeploy อีกรอบ
 
@@ -223,8 +229,8 @@ https://<DOMAIN>/api/auth/callback/google
    (ปกติสำหรับแอปที่ยังไม่ verified — จะหายเมื่อผ่าน verification)
 4. หน้าขอสิทธิ์ต้องขึ้นว่าขอเข้าถึง "เฉพาะไฟล์ที่คุณใช้กับแอปนี้" → **Continue**
 5. เด้งกลับมาที่ `/library`
-6. สร้างโฟลเดอร์ `BookDrive/Books` ใน Google Drive แล้ววางไฟล์ `.epub` ลงไป
-7. กด **สแกน Drive** → หนังสือควรโผล่
+6. กด **เชื่อม Calibre library** → ค้นหาโฟลเดอร์รากของไลบรารี → เลือก
+7. กด **สแกนไลบรารี** → หนังสือควรโผล่
 
 ---
 
@@ -238,8 +244,8 @@ https://<DOMAIN>/api/auth/callback/google
 | ล็อกอินได้ แต่ Picker ไม่เปิด | `NEXT_PUBLIC_*` ยังเป็นค่าเก่า | redeploy โดยปิด build cache (2.4) |
 | ล็อกอินได้ แต่สแกนแล้วไม่เจอไฟล์ | ยังไม่ได้เปิด Google Drive API | ขั้น 3.1 |
 | ทำงานบน production แต่ preview พัง | URL preview เปลี่ยนทุก commit | ดูหัวข้อถัดไป |
-| Picker: `The API developer key is invalid` | referrer ของ key ไม่ตรงโดเมนจริง | แก้ Website restrictions ให้ตรง หรือถ้ายังพังให้ตั้ง Application restrictions = None ชั่วคราวเพื่อยืนยันสาเหตุ |
-| Picker เลือกโฟลเดอร์ได้ แต่สแกนเจอ 0 เล่ม | ลืม `setAppId` ใน PickerBuilder | Drive จะไม่มอบสิทธิ์ให้แอปเลย ทั้งที่ผู้ใช้เลือกแล้ว — `files.get` คืน 404 ต้องใส่ project number ผ่าน `.setAppId()` |
+| สแกนเจอ 0 เล่มทั้งที่โฟลเดอร์มีหนังสือ | scope ยังเป็น `drive.file` | เพิ่ม `drive.readonly` (ขั้น 3.3) แล้ว **ออกจากระบบและล็อกอินใหม่** เพื่อขอ consent รอบใหม่ |
+| อยู่ ๆ ก็หลุดล็อกอินหลังผ่านไปหลายวัน | Testing mode ทำให้ refresh token อายุ 7 วัน | ล็อกอินใหม่ — เลี่ยงไม่ได้จนกว่าจะ publish + ผ่าน CASA |
 | หลุด logout เรื่อยๆ หลังผ่านไปสักพัก | ไม่ได้ refresh token | ตรวจว่า `access_type: 'offline'` ยังอยู่ใน `lib/auth.ts` |
 
 ---

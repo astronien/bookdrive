@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useLibrary } from '@/lib/store/library';
 import { installFlushOnHide } from '@/lib/sync/engine';
-import { pickFolder } from '@/lib/drive/picker';
+import FolderPicker from '@/components/library/FolderPicker';
 import BookCard from '@/components/library/BookCard';
 import type { BookFormat } from '@/lib/types';
 
@@ -16,22 +16,18 @@ export default function LibraryPage() {
   } = useLibrary();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
 
   useEffect(() => {
     load();
     installFlushOnHide();
   }, [load]);
 
-  async function connect() {
+  async function connect(f: { id: string; name: string }) {
+    setPicking(false);
     setMsg(null);
-    try {
-      const picked = await pickFolder();
-      if (!picked) return;
-      await connectCalibre(picked.id, picked.name);
-      setMsg(`เชื่อมโฟลเดอร์ "${picked.name}" แล้ว กดสแกนได้เลย`);
-    } catch (e) {
-      setMsg((e as Error).message);
-    }
+    await connectCalibre(f.id, f.name);
+    setMsg(`เชื่อมโฟลเดอร์ "${f.name}" แล้ว กดสแกนได้เลย`);
   }
 
   async function runScan() {
@@ -60,6 +56,7 @@ export default function LibraryPage() {
 
   return (
     <>
+      {picking && <FolderPicker onPick={connect} onClose={() => setPicking(false)} />}
       <header className="flex h-16 shrink-0 items-center gap-3.5 border-b border-line bg-white px-[22px]">
         <input
           value={query}
@@ -78,7 +75,7 @@ export default function LibraryPage() {
           </button>
         )}
         <button
-          onClick={connect}
+          onClick={() => setPicking(true)}
           className="h-[38px] rounded-[10px] bg-accent px-4 text-[13.5px] font-semibold text-[#08312e] transition hover:bg-accent-d"
         >
           {calibreFolderId ? 'เปลี่ยนโฟลเดอร์' : 'เชื่อม Calibre library'}
@@ -134,8 +131,8 @@ export default function LibraryPage() {
           <div className="rounded-xl border border-dashed border-line py-20 text-center">
             <p className="font-semibold">ยังไม่ได้เชื่อม Calibre library</p>
             <p className="mx-auto mt-2 max-w-md text-[13px] leading-relaxed text-muted">
-              กด &ldquo;เชื่อม Calibre library&rdquo; แล้วเลือกโฟลเดอร์ไลบรารีใน Google Drive
-              การเลือกผ่าน Picker คือวิธีเดียวที่จะมอบสิทธิ์ให้แอปเห็นไฟล์เดิมของคุณได้
+              กด &ldquo;เชื่อม Calibre library&rdquo; แล้วค้นหาโฟลเดอร์ราก Calibre library ของคุณ
+              — ตัวที่มีโฟลเดอร์ผู้เขียนอยู่ข้างใน
               <br />
               <span className="mt-2 block">BookDrive อ่านอย่างเดียว ไม่เขียนอะไรกลับเข้าโฟลเดอร์ Calibre</span>
             </p>
