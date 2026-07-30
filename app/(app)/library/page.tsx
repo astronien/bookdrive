@@ -30,12 +30,18 @@ export default function LibraryPage() {
     setMsg(`เชื่อมโฟลเดอร์ "${f.name}" แล้ว กดสแกนได้เลย`);
   }
 
-  async function runScan() {
+  async function runScan(refresh = false) {
     setBusy(true);
     setMsg(null);
     try {
-      const n = await scanCalibre();
-      setMsg(n ? `เพิ่มหนังสือใหม่ ${n} เล่ม` : 'ไม่พบหนังสือใหม่ — ไลบรารีเป็นปัจจุบันแล้ว');
+      const n = await scanCalibre(refresh);
+      setMsg(
+        refresh
+          ? `อ่าน metadata.opf ใหม่ ${n} เล่ม — ความคืบหน้าการอ่านและไฮไลต์ยังอยู่ครบ`
+          : n
+            ? `เพิ่มหนังสือใหม่ ${n} เล่ม`
+            : 'ไม่พบหนังสือใหม่ — ไลบรารีเป็นปัจจุบันแล้ว'
+      );
     } catch (e) {
       setMsg((e as Error).message);
     } finally {
@@ -66,13 +72,23 @@ export default function LibraryPage() {
         />
         <div className="flex-1" />
         {calibreFolderId && (
-          <button
-            onClick={runScan}
-            disabled={busy}
-            className="h-[38px] rounded-[10px] border border-line px-4 text-[13.5px] font-semibold transition hover:bg-shell disabled:opacity-50"
-          >
-            {busy ? 'กำลังสแกน…' : 'สแกนไลบรารี'}
-          </button>
+          <>
+            <button
+              onClick={() => runScan(true)}
+              disabled={busy}
+              title="อ่าน metadata.opf ใหม่ทุกเล่ม ใช้เมื่อชื่อเรื่องหรือผู้เขียนไม่ถูกต้อง"
+              className="h-[38px] rounded-[10px] border border-line px-4 text-[13.5px] font-semibold transition hover:bg-shell disabled:opacity-50"
+            >
+              อัปเดต metadata
+            </button>
+            <button
+              onClick={() => runScan(false)}
+              disabled={busy}
+              className="h-[38px] rounded-[10px] border border-line px-4 text-[13.5px] font-semibold transition hover:bg-shell disabled:opacity-50"
+            >
+              {busy ? 'กำลังสแกน…' : 'สแกนไลบรารี'}
+            </button>
+          </>
         )}
         <button
           onClick={() => setPicking(true)}

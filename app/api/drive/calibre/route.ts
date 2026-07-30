@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { driveJson, DriveError } from '@/lib/drive/client';
-import { MIME_TO_FORMAT, SUPPORTED_MIMES } from '@/lib/types';
+import { MIME_TO_FORMAT, formatFromName, type BookFormat } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -94,10 +94,14 @@ export async function POST(req: Request) {
     }
 
     // 2) ดึงไฟล์ในทุกโฟลเดอร์ที่เจอ (รวม root ด้วย เผื่อมีไฟล์วางไว้ตรงนั้น)
-    const mimeQ = [...SUPPORTED_MIMES.map((m) => `mimeType='${m}'`), "name contains '.opf'", "name='cover.jpg'"]
-      .join(' or ');
+    //
+    // ไม่กรองด้วย name ใน query เด็ดขาด — Drive ระบุไว้ว่า operator `contains`
+    // ทำ prefix matching เท่านั้นสำหรับ field `name` ดังนั้น `name contains '.opf'`
+    // จะไม่มีวันแมตช์ `metadata.opf` (บั๊กนี้ทำให้ทุกเล่มตกไปใช้ชื่อโฟลเดอร์แทนชื่อจริง)
+    // และไม่กรองด้วย mimeType ด้วย เพราะไฟล์ที่อัปผ่านหน้าเว็บมักเป็น octet-stream
+    // ดึงมาทั้งหมดแล้วคัดแยกในโค้ดปลอดภัยกว่า — โฟลเดอร์หนังสือมีไฟล์ไม่กี่ไฟล์อยู่แล้ว
     const parentIds = [folderId, ...allFolders.map((f) => f.id)];
-    const files = await listByParents(parentIds, `(${mimeQ})`);
+    const files = await listByParents(parentIds, `mimeType != '${FOLDER}'`);
 
     // 3) จัดกลุ่มตามโฟลเดอร์แม่
     const byParent = new Map<string, DriveEntry[]>();
@@ -115,11 +119,14 @@ export async function POST(req: Request) {
     // 4) โฟลเดอร์ไหนมีอีบุ๊ก = เป็นหนังสือหนึ่งเล่ม
     const bookFolders = [];
     for (const [parentId, entries] of byParent) {
-      const ebooks = entries.filter((e) => MIME_TO_FORMAT[e.mimeType]);
+      // mimeType ก่อน ถ้าไม่รู้จักค่อยดูนามสกุล
+      const ebooks = entries
+        .map((e) => ({ e, format: MIME_TO_FORMAT[e.mimeType] ?? formatFromName(e.name) }))
+        .filter((x): x is { e: DriveEntry; format: BookFormat } => x.format !== null);
       if (!ebooks.length) continue;
 
       const opf = entries.find((e) => e.name.toLowerCase().endsWith('.opf'));
-      const cover = entries.find((e) => e.name.toLowerCase() === 'cover.jpg');
+      const cover = entries.find((e) => /^cover\.(jpg|jpeg|png|webp)$/i.test(e.name));
 
       bookFolders.push({
         folderId: parentId,
@@ -127,10 +134,10 @@ export async function POST(req: Request) {
         authorFolderName: folderName.get(folderParent.get(parentId) ?? '') ?? '',
         opfFileId: opf?.id,
         coverFileId: cover?.id,
-        files: ebooks.map((e) => ({
+        files: ebooks.map(({ e, format }) => ({
           driveFileId: e.id,
           name: e.name,
-          format: MIME_TO_FORMAT[e.mimeType],
+          format,
           size: Number(e.size ?? 0),
           modifiedTime: e.modifiedTime,
         })),

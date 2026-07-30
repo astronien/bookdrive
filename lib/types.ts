@@ -149,3 +149,23 @@ export const MIME_TO_FORMAT: Record<string, BookFormat> = {
 };
 
 export const SUPPORTED_MIMES = Object.keys(MIME_TO_FORMAT);
+
+/**
+ * เดาฟอร์แมตจากนามสกุลไฟล์
+ * จำเป็นเพราะไฟล์ที่อัปขึ้น Drive ผ่านหน้าเว็บมักได้ mimeType เป็น application/octet-stream
+ * การดูแค่ mimeType จะทำให้พลาดหนังสือไปเงียบ ๆ
+ */
+export function formatFromName(name: string): BookFormat | null {
+  const ext = name.toLowerCase().split('.').pop() ?? '';
+  switch (ext) {
+    case 'epub': return 'epub';
+    case 'pdf': return 'pdf';
+    case 'cbz': return 'cbz';
+    case 'cbr': return 'cbr';
+    case 'mobi':
+    case 'azw':
+    case 'azw3': return 'mobi';
+    case 'txt': return 'txt';
+    default: return null;
+  }
+}

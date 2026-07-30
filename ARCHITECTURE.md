@@ -299,6 +299,10 @@ Drive API ให้ 12,000 queries / นาที / user — เหลือเ�
 1. walk    — BFS หาโฟลเดอร์ทั้งหมดใต้ library root
              ยิง files.list แบบ batch ครั้งละ 30 parents (`'a' in parents or 'b' in parents ...`)
              ทำขนานทีละ 4 ชุด — ไลบรารี 1,000 เล่มใช้ราว 60 request
+   **ห้ามกรองด้วย `name contains` ใน query** — Drive ทำ prefix matching เท่านั้นสำหรับ
+   field `name` ดังนั้น `name contains '.opf'` จะไม่มีวันแมตช์ `metadata.opf`
+   และห้ามกรองด้วย mimeType อย่างเดียวเพราะไฟล์ที่อัปผ่านหน้าเว็บมักเป็น octet-stream
+   ดึงไฟล์มาทั้งหมดแล้วคัดแยกในโค้ด (mimeType ก่อน แล้วค่อยดูนามสกุล)
 2. group   — โฟลเดอร์ไหนมีไฟล์อีบุ๊ก ≥ 1 ไฟล์ = หนังสือหนึ่งเล่ม
              เกณฑ์นี้ไม่ผูกกับ Author/Title/ เป๊ะๆ จึงรองรับไลบรารีที่ถูกจัดใหม่ด้วย
 3. diff    — ตัดโฟลเดอร์ที่มีใน library.json อยู่แล้วออก (เทียบด้วย Drive folderId)

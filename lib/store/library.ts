@@ -71,7 +71,7 @@ interface State {
 
   load: () => Promise<void>;
   connectCalibre: (folderId: string, name: string) => Promise<void>;
-  scanCalibre: () => Promise<number>;
+  scanCalibre: (refresh?: boolean) => Promise<number>;
   setQuery: (q: string) => void;
   setFormat: (f: State['format']) => void;
   filtered: () => Book[];
@@ -138,7 +138,7 @@ export const useLibrary = create<State>((set, get) => ({
    * โครงของ Calibre คือ Author/Title (id)/ โดยมี metadata.opf กับ cover.jpg วางไว้ให้แล้ว
    * จึงไม่ต้องแกะ EPUB เอง — อ่าน opf ตรงๆ เร็วกว่ามากและได้ series/tags/rating ครบ
    */
-  async scanCalibre() {
+  async scanCalibre(refresh = false) {
     const folderId = get().calibreFolderId;
     if (!folderId) throw new Error('ยังไม่ได้เลือกโฟลเดอร์ Calibre library');
 
@@ -164,15 +164,15 @@ export const useLibrary = create<State>((set, get) => ({
       }[];
     };
 
-    // ข้ามเล่มที่มีอยู่แล้ว (เทียบด้วย folderId ของ Calibre)
     const known = new Map(get().books.filter((b) => b.folderId).map((b) => [b.folderId!, b]));
-    const fresh = found.filter((f) => !known.has(f.folderId));
+    // refresh = อ่าน opf ใหม่ทุกเล่มเพื่ออัปเดต metadata (เช่นตอนแก้บั๊กที่ทำให้อ่าน opf ไม่ได้)
+    const todo = refresh ? found : found.filter((f) => !known.has(f.folderId));
 
-    set({ scan: { phase: 'metadata', done: 0, total: fresh.length } });
+    set({ scan: { phase: 'metadata', done: 0, total: todo.length } });
 
     const now = new Date().toISOString();
-    const added = await pool(
-      fresh,
+    const built = await pool(
+      todo,
       8, // อ่าน opf ทีละ 8 ไฟล์ — เร็วพอโดยไม่ชน rate limit ของ Drive
       async (f): Promise<Book> => {
         let meta: ReturnType<typeof parseOpf> | null = null;
@@ -186,9 +186,18 @@ export const useLibrary = create<State>((set, get) => ({
         }
 
         const files = [...f.files].sort((a, b) => FORMAT_RANK[a.format] - FORMAT_RANK[b.format]);
+        const prev = known.get(f.folderId);
 
         return {
-          id: crypto.randomUUID(),
+          // เก็บสิ่งที่เป็นของผู้ใช้ไว้เสมอตอน refresh — id ผูกกับ progress/ไฮไลต์
+          id: prev?.id ?? crypto.randomUUID(),
+          addedAt: prev?.addedAt ?? now,
+          lastOpenedAt: prev?.lastOpenedAt,
+          status: prev?.status ?? 'unread',
+          percent: prev?.percent ?? 0,
+          preferredFormat: prev?.preferredFormat,
+          shelfIds: prev?.shelfIds ?? [],
+
           source: 'calibre',
           folderId: f.folderId,
           calibreId: meta?.calibreId ?? calibreIdFromFolder(f.folderName),
@@ -205,34 +214,35 @@ export const useLibrary = create<State>((set, get) => ({
           description: meta?.description,
           rating: meta?.rating,
           tags: meta?.tags ?? [],
-
-          shelfIds: [],
-          addedAt: now,
-          status: 'unread',
-          percent: 0,
         };
       },
       (done, total) => set({ scan: { phase: 'metadata', done, total } })
     );
 
-    if (!added.length) {
+    if (!built.length) {
       set({ scan: { phase: 'idle', done: 0, total: 0 } });
       return 0;
     }
 
-    set({ scan: { phase: 'saving', done: added.length, total: added.length } });
+    set({ scan: { phase: 'saving', done: built.length, total: built.length } });
 
-    const books = [...get().books, ...added].sort((a, b) => a.title.localeCompare(b.title, 'th'));
-    set({ books });
+    // แทนที่เล่มเดิมด้วยตัวที่เพิ่งอ่านใหม่ (เทียบด้วย folderId) แล้วต่อท้ายเล่มใหม่
+    const byFolder = new Map(built.map((b) => [b.folderId!, b]));
+    const merged = [
+      ...get().books.map((b) => (b.folderId && byFolder.has(b.folderId) ? byFolder.get(b.folderId)! : b)),
+      ...built.filter((b) => !known.has(b.folderId!)),
+    ].sort((a, b) => a.title.localeCompare(b.title, 'th'));
+
+    set({ books: merged });
     await persist({
       ...emptyLib(),
       calibreFolderId: folderId,
       calibreFolderName: get().calibreFolderName,
-      books,
+      books: merged,
     });
 
     set({ scan: { phase: 'idle', done: 0, total: 0 } });
-    return added.length;
+    return built.length;
   },
 
   setQuery: (query) => set({ query }),
