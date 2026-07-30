@@ -53,6 +53,11 @@ async function pool<T, R>(
   return out;
 }
 
+/** การ์ดหนึ่งใบในหน้าไลบรารี — เล่มเดี่ยว หรือชุดหนังสือที่ยุบรวมกัน */
+export type ShelfEntry =
+  | { kind: 'book'; book: Book }
+  | { kind: 'series'; name: string; books: Book[] };
+
 export interface ScanProgress {
   phase: 'idle' | 'listing' | 'metadata' | 'saving';
   done: number;
@@ -75,6 +80,7 @@ interface State {
   setQuery: (q: string) => void;
   setFormat: (f: State['format']) => void;
   filtered: () => Book[];
+  grouped: () => ShelfEntry[];
   setPreferredFormat: (bookId: string, f: BookFormat) => Promise<void>;
   saveProgress: (bookId: string, patch: Partial<Progress>) => Promise<void>;
 }
@@ -260,6 +266,44 @@ export const useLibrary = create<State>((set, get) => ({
         b.tags.some((t) => t.toLowerCase().includes(q)) ||
         (b.series?.name.toLowerCase().includes(q) ?? false)
       );
+    });
+  },
+
+  /**
+   * ยุบเล่มที่อยู่ชุดเดียวกันให้เหลือการ์ดเดียว
+   * ชุดที่มีเล่มเดียวไม่ต้องยุบ — ยุบแล้วผู้ใช้ต้องคลิกเพิ่มโดยไม่ได้อะไรกลับมา
+   */
+  grouped() {
+    const books = get().filtered();
+    const series = new Map<string, Book[]>();
+    const singles: Book[] = [];
+
+    for (const b of books) {
+      const name = b.series?.name?.trim();
+      if (!name) { singles.push(b); continue; }
+      const arr = series.get(name) ?? [];
+      arr.push(b);
+      series.set(name, arr);
+    }
+
+    const out: ShelfEntry[] = singles.map((book) => ({ kind: 'book' as const, book }));
+
+    for (const [name, list] of series) {
+      if (list.length === 1) {
+        out.push({ kind: 'book', book: list[0] });
+      } else {
+        out.push({
+          kind: 'series',
+          name,
+          books: [...list].sort((a, b) => (a.series?.index ?? 0) - (b.series?.index ?? 0)),
+        });
+      }
+    }
+
+    return out.sort((a, b) => {
+      const ta = a.kind === 'book' ? a.book.title : a.name;
+      const tb = b.kind === 'book' ? b.book.title : b.name;
+      return ta.localeCompare(tb, 'th');
     });
   },
 

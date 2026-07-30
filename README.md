@@ -55,6 +55,7 @@ lib/
 - [x] OAuth + refresh token
 - [x] เชื่อม Calibre library ผ่าน Google Picker → สแกนแบบ batch → อ่าน metadata.opf
 - [x] รวมหลายฟอร์แมตของเล่มเดียวกันเป็นการ์ดเดียว สลับตอนเปิดอ่าน
+- [x] รวมหนังสือชุดเดียวกันเป็นการ์ดเดียว คลิกเข้าไปเลือกเล่ม (อ่าน series จาก opf)
 - [x] EPUB reader + บันทึกตำแหน่งอ่าน (CFI)
 - [x] Sync engine + conflict merge
 - [x] Cache ออฟไลน์ (IndexedDB)

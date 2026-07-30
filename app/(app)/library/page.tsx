@@ -5,6 +5,7 @@ import { useLibrary } from '@/lib/store/library';
 import { installFlushOnHide } from '@/lib/sync/engine';
 import FolderPicker from '@/components/library/FolderPicker';
 import BookCard from '@/components/library/BookCard';
+import SeriesCard from '@/components/library/SeriesCard';
 import type { BookFormat } from '@/lib/types';
 
 const FORMATS: ('all' | BookFormat)[] = ['all', 'epub', 'pdf', 'cbz'];
@@ -12,7 +13,7 @@ const FORMATS: ('all' | BookFormat)[] = ['all', 'epub', 'pdf', 'cbz'];
 export default function LibraryPage() {
   const {
     books, loading, load, query, setQuery, format, setFormat, filtered,
-    calibreFolderId, calibreFolderName, connectCalibre, scanCalibre, scan,
+    calibreFolderId, calibreFolderName, connectCalibre, scanCalibre, scan, grouped,
   } = useLibrary();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -50,6 +51,7 @@ export default function LibraryPage() {
   }
 
   const list = filtered();
+  const entries = grouped();
 
   const scanLabel =
     scan.phase === 'listing'
@@ -103,6 +105,9 @@ export default function LibraryPage() {
           <h1 className="text-[25px] font-bold tracking-tight">หนังสือทั้งหมด</h1>
           <p className="mt-1 text-[13px] text-muted">
             {books.length} เล่ม
+            {entries.length !== books.length && (
+              <> · {entries.filter((e) => e.kind === 'series').length} ชุดหนังสือ</>
+            )}
             {calibreFolderName && <> · จาก <b className="text-ink">{calibreFolderName}</b></>}
           </p>
         </div>
@@ -162,7 +167,13 @@ export default function LibraryPage() {
           </div>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(158px,1fr))] gap-x-[18px] gap-y-[22px]">
-            {list.map((b) => <BookCard key={b.id} book={b} />)}
+            {entries.map((e) =>
+              e.kind === 'series' ? (
+                <SeriesCard key={`s:${e.name}`} name={e.name} books={e.books} />
+              ) : (
+                <BookCard key={e.book.id} book={e.book} />
+              )
+            )}
           </div>
         )}
       </div>
