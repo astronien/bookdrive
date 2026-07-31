@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import type { Book } from '@/lib/types';
@@ -31,12 +31,23 @@ export default function RoomScene({
   const onOpenRef = useRef(onOpen);
   onOpenRef.current = onOpen;
 
+  // store ยิง books ใหม่ทุกครั้งที่อัปเดตอะไรก็ตาม (เช่น saveProgress)
+  // ถ้าผูก effect ไว้กับ books ตรง ๆ ฉากจะถูกสร้างใหม่ทั้งห้อง = dispose แล้วสร้าง
+  // texture 260 ใบใหม่โดยไม่จำเป็น ผูกกับ "รายชื่อเล่มที่จะวาง" แทน
+  const booksRef = useRef(books);
+  booksRef.current = books;
+  const sceneKey = useMemo(
+    () => books.slice(0, MAX_BOOKS).map((b) => b.id).join(','),
+    [books]
+  );
+
   useEffect(() => {
     setTouch(window.matchMedia('(pointer: coarse)').matches);
   }, []);
 
   useEffect(() => {
     const host = hostRef.current;
+    const books = booksRef.current;
     if (!host || !books.length) return;
 
     const scene = new THREE.Scene();
@@ -285,7 +296,7 @@ export default function RoomScene({
       renderer.dispose();
       host.removeChild(renderer.domElement);
     };
-  }, [books]);
+  }, [sceneKey]);
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#12101a]">
