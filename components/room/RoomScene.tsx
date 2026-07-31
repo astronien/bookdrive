@@ -21,9 +21,13 @@ export default function RoomScene({
   const [hover, setHover] = useState<Book | null>(null);
   const [ready, setReady] = useState(false);
   const [touch, setTouch] = useState(false);
+  const [entered, setEntered] = useState(false);
 
   // เก็บใน ref เพื่อให้ event handler ใน three อ่านค่าล่าสุดได้โดยไม่ต้อง re-init scene
   const hoverRef = useRef<Book | null>(null);
+  const controlsRef = useRef<PointerLockControls | null>(null);
+  /** ปุ่มเดินบนจอสัมผัส — ใช้ ref เพราะลูปเรนเดอร์อ่านทุกเฟรม */
+  const walkRef = useRef(0);
   const onOpenRef = useRef(onOpen);
   onOpenRef.current = onOpen;
 
@@ -150,6 +154,7 @@ export default function RoomScene({
 
     // ---------- การควบคุม ----------
     const controls = new PointerLockControls(camera, renderer.domElement);
+    controlsRef.current = controls;
     controls.addEventListener('lock', () => setLocked(true));
     controls.addEventListener('unlock', () => setLocked(false));
 
@@ -165,8 +170,10 @@ export default function RoomScene({
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
     const onClick = () => {
-      if (!controls.isLocked) {
+      // จอสัมผัสไม่มี pointer lock — แตะแล้วหยิบเล่มที่เล็งอยู่ได้เลย
+      if (!coarse && !controls.isLocked) {
         controls.lock();
         return;
       }
@@ -217,7 +224,7 @@ export default function RoomScene({
       const dt = Math.min(clock.getDelta(), 0.05);
 
       const fwd = (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) -
-        (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0);
+        (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0) + walkRef.current;
       const side = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) -
         (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
       const boost = keys.has('ShiftLeft') ? 1.8 : 1;
@@ -271,6 +278,7 @@ export default function RoomScene({
       renderer.domElement.removeEventListener('touchmove', onTouchMove);
       renderer.domElement.removeEventListener('touchend', onTouchEnd);
       controls.disconnect();
+      controlsRef.current = null;
       // texture ต่อเล่มไม่ถูกเก็บอัตโนมัติ ต้อง dispose เองไม่งั้น GPU memory รั่ว
       for (const d of disposables) d.dispose();
       bookGeo.dispose();
@@ -284,7 +292,7 @@ export default function RoomScene({
       <div ref={hostRef} className="h-full w-full" />
 
       {/* เป้ากลางจอ */}
-      {locked && (
+      {(locked || (touch && entered)) && (
         <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <div className={`h-2 w-2 rounded-full ring-2 ${hover ? 'bg-accent ring-accent/40' : 'bg-white/70 ring-white/20'}`} />
         </div>
@@ -302,9 +310,36 @@ export default function RoomScene({
         </div>
       )}
 
-      {/* หน้าจอเริ่มต้น */}
-      {!locked && (
-        <div className="absolute inset-0 grid place-items-center bg-black/55 backdrop-blur-sm">
+      {/* ปุ่มเดินสำหรับจอสัมผัส — ไม่มีคีย์บอร์ดให้กด WASD */}
+      {touch && entered && (
+        <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-3">
+          {([['เดินหน้า', 1], ['ถอยหลัง', -1]] as const).map(([label, dir]) => (
+            <button
+              key={label}
+              onPointerDown={() => { walkRef.current = dir; }}
+              onPointerUp={() => { walkRef.current = 0; }}
+              onPointerLeave={() => { walkRef.current = 0; }}
+              onPointerCancel={() => { walkRef.current = 0; }}
+              className="select-none rounded-full bg-white/85 px-6 py-3 text-[13px] font-semibold text-ink shadow-lg backdrop-blur active:bg-accent"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* หน้าจอเริ่มต้น
+          ต้องรับคลิกเองแล้วสั่ง lock — ตัวมันทับ canvas อยู่ คลิกจะไม่ทะลุลงไปถึง listener ข้างล่าง */}
+      {!locked && !(touch && entered) && (
+        <button
+          type="button"
+          onClick={() => {
+            if (!ready) return;
+            setEntered(true);
+            if (!touch) controlsRef.current?.lock();
+          }}
+          className="absolute inset-0 grid w-full cursor-pointer place-items-center bg-black/55 backdrop-blur-sm"
+        >
           <div className="max-w-[420px] rounded-2xl bg-white p-7 text-center shadow-2xl">
             <h2 className="text-[19px] font-bold">ห้องอ่านหนังสือ</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-muted">
@@ -314,13 +349,13 @@ export default function RoomScene({
                   : 'คลิกเพื่อเข้าห้อง — เดินด้วย W A S D, มองด้วยเมาส์, กด Shift เพื่อเดินเร็ว, Esc เพื่อออก'
                 : 'กำลังจัดชั้นหนังสือ…'}
             </p>
-            {ready && !touch && (
-              <p className="mt-3 text-[11.5px] text-muted">
-                เล็งไปที่สันหนังสือแล้วคลิกเพื่อหยิบมาอ่าน
+            {ready && (
+              <p className="mt-4 inline-block rounded-[10px] bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-[#08312e]">
+                {touch ? 'แตะเพื่อเข้าห้อง' : 'คลิกเพื่อเข้าห้อง'}
               </p>
             )}
           </div>
-        </div>
+        </button>
       )}
     </div>
   );
