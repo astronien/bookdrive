@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import type { Book } from '@/lib/types';
 import { makeSpineCanvas } from '@/lib/room/spine';
-import { ROOM, SHELF_CONF, layoutBooks, makeBookcases } from '@/lib/room/layout';
+import { ROOM, layoutBooks, makeBookcases } from '@/lib/room/layout';
+import { buildWorld } from '@/lib/room/props';
 
 /** จำกัดจำนวนเล่มที่ render — เกินกว่านี้เฟรมเรตตกและกินหน่วยความจำ texture มาก */
 const MAX_BOOKS = 260;
@@ -51,8 +52,8 @@ export default function RoomScene({
     if (!host || !books.length) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#12101a');
-    scene.fog = new THREE.Fog('#12101a', 8, 26);
+    scene.background = new THREE.Color('#f2ddb8');
+    scene.fog = new THREE.Fog('#f0d9b0', 14, 34);
 
     const camera = new THREE.PerspectiveCamera(70, host.clientWidth / host.clientHeight, 0.05, 100);
     camera.position.set(0, EYE, ROOM.d / 2 - 2);
@@ -60,82 +61,16 @@ export default function RoomScene({
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(host.clientWidth, host.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
     renderer.shadowMap.enabled = false; // เงาแบบ realtime กับ 260 เล่มหนักเกินไป
     host.appendChild(renderer.domElement);
 
-    // ---------- แสง ----------
-    scene.add(new THREE.AmbientLight('#ffe9c9', 0.55));
-    const hemi = new THREE.HemisphereLight('#ffd9a0', '#2a2438', 0.5);
-    scene.add(hemi);
-    for (const [x, z] of [[-6, -3], [6, -3], [0, 3]] as const) {
-      const lamp = new THREE.PointLight('#ffcf8f', 22, 16, 2);
-      lamp.position.set(x, ROOM.h - 0.7, z);
-      scene.add(lamp);
-    }
-
     // ---------- ห้อง ----------
-    const woodDark = new THREE.MeshStandardMaterial({ color: '#4a3423', roughness: 0.85 });
-    const woodMid = new THREE.MeshStandardMaterial({ color: '#5c4230', roughness: 0.8 });
-
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(ROOM.w, ROOM.d),
-      new THREE.MeshStandardMaterial({ color: '#3b2a1c', roughness: 0.95 })
-    );
-    floor.rotation.x = -Math.PI / 2;
-    scene.add(floor);
-
-    const ceil = new THREE.Mesh(
-      new THREE.PlaneGeometry(ROOM.w, ROOM.d),
-      new THREE.MeshStandardMaterial({ color: '#1d1826', roughness: 1 })
-    );
-    ceil.rotation.x = Math.PI / 2;
-    ceil.position.y = ROOM.h;
-    scene.add(ceil);
-
-    const wallMat = new THREE.MeshStandardMaterial({ color: '#2b2333', roughness: 0.95 });
-    const mkWall = (w: number, x: number, z: number, ry: number) => {
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, ROOM.h), wallMat);
-      m.position.set(x, ROOM.h / 2, z);
-      m.rotation.y = ry;
-      scene.add(m);
-    };
-    mkWall(ROOM.w, 0, -ROOM.d / 2, 0);
-    mkWall(ROOM.w, 0, ROOM.d / 2, Math.PI);
-    mkWall(ROOM.d, -ROOM.w / 2, 0, Math.PI / 2);
-    mkWall(ROOM.d, ROOM.w / 2, 0, -Math.PI / 2);
-
-    // ---------- ตู้หนังสือ ----------
     const shown = books.slice(0, MAX_BOOKS);
     const cases = makeBookcases(shown.length);
-    const { SHELF_LEVELS, SHELF_BOTTOM, SHELF_GAP, CASE_DEPTH } = SHELF_CONF;
-    const caseH = SHELF_BOTTOM + SHELF_LEVELS * SHELF_GAP;
-
-    for (const c of cases) {
-      const g = new THREE.Group();
-      g.position.set(c.x, 0, c.z);
-      g.rotation.y = c.rotY;
-
-      // แผ่นหลัง
-      const back = new THREE.Mesh(new THREE.BoxGeometry(c.width, caseH, 0.04), woodDark);
-      back.position.set(0, caseH / 2, -CASE_DEPTH / 2);
-      g.add(back);
-
-      // ข้างซ้าย/ขวา
-      for (const sx of [-1, 1]) {
-        const side = new THREE.Mesh(new THREE.BoxGeometry(0.06, caseH, CASE_DEPTH), woodMid);
-        side.position.set((sx * c.width) / 2, caseH / 2, 0);
-        g.add(side);
-      }
-
-      // ชั้นวาง
-      for (let i = 0; i <= SHELF_LEVELS; i++) {
-        const y = SHELF_BOTTOM + i * SHELF_GAP;
-        const plank = new THREE.Mesh(new THREE.BoxGeometry(c.width, 0.04, CASE_DEPTH), woodMid);
-        plank.position.set(0, y - 0.02, 0);
-        g.add(plank);
-      }
-      scene.add(g);
-    }
+    const world = buildWorld(scene, cases);
 
     // ---------- หนังสือ ----------
     const slots = layoutBooks(shown, cases);
@@ -147,7 +82,7 @@ export default function RoomScene({
       const tex = new THREE.CanvasTexture(makeSpineCanvas(s.book));
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.anisotropy = 4;
-      const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.75 });
+      const mat = new THREE.MeshToonMaterial({ map: tex, gradientMap: world.gradient });
       disposables.push(tex, mat);
 
       const m = new THREE.Mesh(bookGeo, mat);
@@ -267,6 +202,7 @@ export default function RoomScene({
         last.position.copy(home).addScaledVector(dir, 0.07);
       }
 
+      world.update(clock.elapsedTime);
       renderer.render(scene, camera);
     };
     tick();
@@ -292,6 +228,7 @@ export default function RoomScene({
       controlsRef.current = null;
       // texture ต่อเล่มไม่ถูกเก็บอัตโนมัติ ต้อง dispose เองไม่งั้น GPU memory รั่ว
       for (const d of disposables) d.dispose();
+      world.dispose();
       bookGeo.dispose();
       renderer.dispose();
       host.removeChild(renderer.domElement);
@@ -302,6 +239,19 @@ export default function RoomScene({
     <div className="relative h-full w-full overflow-hidden bg-[#12101a]">
       <div ref={hostRef} className="h-full w-full" />
 
+      {/* ขอบมืดรอบเฟรม + ฟิล์มโทนอุ่น — ช่วยดึงสายตาเข้ากลางจอและทำให้ดูเป็นภาพวาด */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 42%, rgba(60,32,10,.42) 100%)',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 mix-blend-soft-light"
+        style={{ background: 'linear-gradient(180deg, rgba(255,214,150,.30), rgba(120,70,30,.18))' }}
+      />
+
       {/* เป้ากลางจอ */}
       {(locked || (touch && entered)) && (
         <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -311,7 +261,7 @@ export default function RoomScene({
 
       {/* ชื่อเล่มที่กำลังมอง */}
       {hover && (
-        <div className="pointer-events-none absolute bottom-24 left-1/2 max-w-[520px] -translate-x-1/2 rounded-xl bg-black/70 px-5 py-3 text-center text-white backdrop-blur">
+        <div className="pointer-events-none absolute bottom-24 left-1/2 max-w-[520px] -translate-x-1/2 rounded-xl border border-[#e8c98a]/40 bg-[#2a1a0e]/80 px-5 py-3 text-center text-[#f7e7c8] shadow-xl backdrop-blur">
           <div className="text-[15px] font-semibold">{hover.title}</div>
           <div className="mt-0.5 text-[12px] opacity-70">
             {hover.authors.join(', ') || '—'}
@@ -349,9 +299,9 @@ export default function RoomScene({
             setEntered(true);
             if (!touch) controlsRef.current?.lock();
           }}
-          className="absolute inset-0 grid w-full cursor-pointer place-items-center bg-black/55 backdrop-blur-sm"
+          className="absolute inset-0 grid w-full cursor-pointer place-items-center bg-[#2a1a0e]/55 backdrop-blur-sm"
         >
-          <div className="max-w-[420px] rounded-2xl bg-white p-7 text-center shadow-2xl">
+          <div className="max-w-[420px] rounded-2xl border border-[#e8c98a] bg-[#fdf3e0] p-7 text-center shadow-2xl">
             <h2 className="text-[19px] font-bold">ห้องอ่านหนังสือ</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-muted">
               {ready
