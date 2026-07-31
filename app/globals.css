@@ -19,3 +19,53 @@ body { background: var(--color-shell); color: var(--color-ink); }
 /* ธีมของ reader — ฉีดเข้า iframe ของ epub.js ผ่าน rendition.themes */
 .reader-sepia { background: #f4ecd8; }
 .reader-dark  { background: #16181f; color: #c6c9d4; }
+
+/* ---------- การ์ดเอียงตามเมาส์แบบ Apple TV ---------- */
+
+.tilt {
+  --rx: 0deg;
+  --ry: 0deg;
+  --mx: 50%;
+  --my: 50%;
+  --on: 0;
+}
+
+.tilt-inner {
+  position: relative;
+  transform-style: preserve-3d;
+  transform:
+    rotateX(var(--rx))
+    rotateY(var(--ry))
+    translateZ(calc(var(--on) * 14px))
+    scale(calc(1 + var(--on) * 0.03));
+  /* หน่วงตอนชี้ให้ไวเพื่อให้รู้สึกติดมือ แต่ตอนปล่อยให้ช้าลงเหมือนค่อย ๆ คืนตัว */
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.tilt:hover .tilt-inner {
+  transition: transform 0.12s ease-out;
+}
+
+/* แสงสะท้อนวิ่งตามเมาส์ */
+.tilt-glare {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: var(--on);
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    circle at var(--mx) var(--my),
+    rgba(255, 255, 255, calc(var(--glare, 0.35) * 1)) 0%,
+    rgba(255, 255, 255, calc(var(--glare, 0.35) * 0.35)) 28%,
+    rgba(255, 255, 255, 0) 62%
+  );
+  mix-blend-mode: soft-light;
+}
+
+/* ปิดเอฟเฟกต์ให้ผู้ที่ตั้งค่าลดการเคลื่อนไหว */
+@media (prefers-reduced-motion: reduce) {
+  .tilt-inner { transform: none !important; transition: none; }
+  .tilt-glare { display: none; }
+}

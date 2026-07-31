@@ -60,13 +60,16 @@ export default function SeriesPage({ params }: { params: Promise<{ name: string 
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(158px,1fr))] gap-x-[18px] gap-y-[22px]">
             {volumes.map((b) => (
-              <div key={b.id} className="relative">
-                {/* เลขเล่มจาก calibre:series_index */}
-                <span className="absolute -left-1.5 -top-1.5 z-10 grid h-6 min-w-6 place-items-center rounded-full bg-navy px-1.5 text-[11px] font-bold text-white shadow">
-                  {b.series?.index ?? '?'}
-                </span>
-                <BookCard book={b} />
-              </div>
+              <BookCard
+                key={b.id}
+                book={b}
+                /* เลขเล่มจาก calibre:series_index — ส่งเข้าไปในการ์ดเพื่อให้เอียงไปพร้อมกัน */
+                badge={
+                  <span className="grid h-6 min-w-6 place-items-center rounded-full bg-navy px-1.5 text-[11px] font-bold text-white shadow-md">
+                    {b.series?.index ?? '?'}
+                  </span>
+                }
+              />
             ))}
           </div>
         )}

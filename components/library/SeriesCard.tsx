@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import TiltCard from '@/components/ui/TiltCard';
 import type { Book } from '@/lib/types';
 
 const PALETTES = [
@@ -23,47 +24,59 @@ export default function SeriesCard({ name, books }: { name: string; books: Book[
   const readCount = books.filter((x) => x.percent >= 95).length;
   const inProgress = books.some((x) => x.percent > 0 && x.percent < 95);
   const authors = [...new Set(books.flatMap((x) => x.authors))];
+  const avg = books.reduce((s, x) => s + x.percent, 0) / books.length;
 
   return (
     <Link href={`/series/${encodeURIComponent(name)}`} className="group block">
-      <div className="relative aspect-[2/3]">
-        {/* การ์ดซ้อนด้านหลัง สื่อว่ามีหลายเล่ม */}
-        <div className="absolute inset-y-2 left-3 right-[-6px] rounded-[9px] bg-line/70 transition group-hover:translate-x-1" />
-        <div className="absolute inset-y-1 left-1.5 right-[-3px] rounded-[9px] bg-line transition group-hover:translate-x-0.5" />
+      <TiltCard className="rounded-[9px]">
+        <div className="relative aspect-[2/3]">
+          {/* การ์ดซ้อนด้านหลัง วางลึกกว่าเล่มหน้าเพื่อให้เกิด parallax ตอนเอียง */}
+          <div
+            className="absolute inset-y-2 left-3 right-[-6px] rounded-[9px] bg-line/70"
+            style={{ transform: 'translateZ(-22px)' }}
+          />
+          <div
+            className="absolute inset-y-1 left-1.5 right-[-3px] rounded-[9px] bg-line"
+            style={{ transform: 'translateZ(-11px)' }}
+          />
 
-        <div className="relative h-full overflow-hidden rounded-[9px] shadow-[0_4px_16px_rgba(25,29,68,.10)] transition duration-200 group-hover:-translate-y-1 group-hover:shadow-[0_12px_40px_rgba(25,29,68,.20)]">
-          {cover ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={cover} alt={name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-          ) : (
-            <div
-              className="flex h-full flex-col justify-end p-3.5 text-white"
-              style={{ background: `linear-gradient(150deg, ${a}, ${b})` }}
-            >
-              <div className="text-[14.5px] font-bold leading-tight drop-shadow">{name}</div>
-            </div>
-          )}
+          <div className="absolute inset-0 overflow-hidden rounded-[9px] shadow-[0_4px_16px_rgba(25,29,68,.10)] transition-shadow duration-300 group-hover:shadow-[0_22px_48px_rgba(25,29,68,.28)]">
+            {cover ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={cover} alt={name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+            ) : (
+              <div
+                className="flex h-full flex-col justify-end p-3.5 text-white"
+                style={{ background: `linear-gradient(150deg, ${a}, ${b})` }}
+              >
+                <div className="text-[14.5px] font-bold leading-tight drop-shadow">{name}</div>
+              </div>
+            )}
 
-          <span className="absolute left-2 top-2 rounded bg-navy/85 px-1.5 py-0.5 text-[9.5px] font-bold text-white backdrop-blur">
+            {inProgress && (
+              <div className="absolute inset-x-0 bottom-0 h-[3px] bg-black/25">
+                <div className="h-full bg-accent" style={{ width: `${avg}%` }} />
+              </div>
+            )}
+          </div>
+
+          <span
+            className="pointer-events-none absolute left-2 top-2 rounded bg-navy/85 px-1.5 py-0.5 text-[9.5px] font-bold text-white shadow-sm backdrop-blur"
+            style={{ transform: 'translateZ(34px)' }}
+          >
             {books.length} เล่ม
           </span>
 
           {readCount > 0 && (
-            <span className="absolute right-2 top-2 rounded bg-accent/90 px-1.5 py-0.5 text-[9.5px] font-bold text-[#08312e]">
+            <span
+              className="pointer-events-none absolute right-2 top-2 rounded bg-accent/90 px-1.5 py-0.5 text-[9.5px] font-bold text-[#08312e] shadow-sm"
+              style={{ transform: 'translateZ(34px)' }}
+            >
               อ่านจบ {readCount}
             </span>
           )}
-
-          {inProgress && (
-            <div className="absolute inset-x-0 bottom-0 h-[3px] bg-black/25">
-              <div
-                className="h-full bg-accent"
-                style={{ width: `${books.reduce((s, x) => s + x.percent, 0) / books.length}%` }}
-              />
-            </div>
-          )}
         </div>
-      </div>
+      </TiltCard>
 
       <div className="pt-2.5">
         <div className="line-clamp-2 text-[12.8px] font-semibold leading-snug">{name}</div>
