@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import TiltCard from '@/components/ui/TiltCard';
 import Book3D from '@/components/ui/Book3D';
+import { FormatTag } from '@/components/ui/Tag';
 import type { Book } from '@/lib/types';
 
 const PALETTES = [
@@ -76,24 +77,13 @@ export default function BookCard({
               {badge}
             </div>
           )}
-
-          <div
-            className="pointer-events-none absolute right-2 top-2 flex gap-1"
-            style={{ transform: 'translateZ(30px)' }}
-          >
-            {formats.map((f) => (
-              <span
-                key={f}
-                className="rounded bg-black/50 px-1.5 py-0.5 text-[8.5px] font-bold tracking-wider text-white shadow-sm backdrop-blur"
-              >
-                {f.toUpperCase()}
-              </span>
-            ))}
-          </div>
         </div>
       </TiltCard>
 
       <div className="pt-2.5">
+        <div className="mb-1 flex flex-wrap gap-1">
+          {formats.map((f) => <FormatTag key={f} format={f} />)}
+        </div>
         <div className="line-clamp-2 text-[12.8px] font-semibold leading-snug">{book.title}</div>
         <div className="mt-0.5 truncate text-[11.2px] text-muted">{book.authors.join(', ') || '—'}</div>
         {book.series && (

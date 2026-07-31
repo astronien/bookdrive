@@ -5,6 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useLibrary } from '@/lib/store/library';
 import type { Book } from '@/lib/types';
+import { FormatTag } from '@/components/ui/Tag';
 
 // three.js แตะ window ตรงๆ และ bundle ใหญ่ — ปิด SSR และโหลดเฉพาะตอนเข้าหน้านี้
 const RoomScene = dynamic(() => import('@/components/room/RoomScene'), {
@@ -81,9 +82,7 @@ export default function RoomPage() {
                   )}
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {[...new Set(picked.files.map((f) => f.format))].map((f) => (
-                      <span key={f} className="rounded border border-line px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-muted">
-                        {f.toUpperCase()}
-                      </span>
+                      <FormatTag key={f} format={f} />
                     ))}
                   </div>
                   {picked.percent > 0 && (

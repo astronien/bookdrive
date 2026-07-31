@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import TiltCard from '@/components/ui/TiltCard';
 import Book3D from '@/components/ui/Book3D';
+import { CountTag, DoneTag, FormatTag } from '@/components/ui/Tag';
 import type { Book } from '@/lib/types';
 
 const PALETTES = [
@@ -25,6 +26,7 @@ export default function SeriesCard({ name, books }: { name: string; books: Book[
   const readCount = books.filter((x) => x.percent >= 95).length;
   const inProgress = books.some((x) => x.percent > 0 && x.percent < 95);
   const authors = [...new Set(books.flatMap((x) => x.authors))];
+  const formats = [...new Set(books.flatMap((x) => x.files.map((f) => f.format)))];
   const avg = books.reduce((s, x) => s + x.percent, 0) / books.length;
 
   return (
@@ -63,25 +65,15 @@ export default function SeriesCard({ name, books }: { name: string; books: Book[
             )}
           </Book3D>
 
-          <span
-            className="pointer-events-none absolute left-2 top-2 rounded bg-navy/85 px-1.5 py-0.5 text-[9.5px] font-bold text-white shadow-sm backdrop-blur"
-            style={{ transform: 'translateZ(34px)' }}
-          >
-            {books.length} เล่ม
-          </span>
-
-          {readCount > 0 && (
-            <span
-              className="pointer-events-none absolute right-2 top-2 rounded bg-accent/90 px-1.5 py-0.5 text-[9.5px] font-bold text-[#08312e] shadow-sm"
-              style={{ transform: 'translateZ(34px)' }}
-            >
-              อ่านจบ {readCount}
-            </span>
-          )}
         </div>
       </TiltCard>
 
       <div className="pt-2.5">
+        <div className="mb-1 flex flex-wrap gap-1">
+          <CountTag>{books.length} เล่ม</CountTag>
+          {readCount > 0 && <DoneTag>อ่านจบ {readCount}</DoneTag>}
+          {formats.map((f) => <FormatTag key={f} format={f} />)}
+        </div>
         <div className="line-clamp-2 text-[12.8px] font-semibold leading-snug">{name}</div>
         <div className="mt-0.5 truncate text-[11.2px] text-muted">{authors.join(', ') || '—'}</div>
       </div>
