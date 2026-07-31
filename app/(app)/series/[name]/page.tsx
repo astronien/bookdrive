@@ -24,15 +24,15 @@ export default function SeriesPage({ params }: { params: Promise<{ name: string 
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-3.5 border-b border-line bg-white px-[22px]">
+      <header className="flex h-14 shrink-0 items-center gap-2.5 border-b border-line bg-white px-4 md:h-16 md:gap-3.5 md:px-[22px]">
         <Link href="/library" className="text-[13px] text-muted hover:text-ink">← ไลบรารี</Link>
         <div className="flex-1 truncate text-center text-[13px] font-semibold">{seriesName}</div>
         <div className="w-[70px]" />
       </header>
 
-      <div className="flex-1 overflow-y-auto px-[30px] pb-16 pt-6">
+      <div className="flex-1 overflow-y-auto px-4 pb-16 pt-5 md:px-[30px] md:pt-6">
         <div className="mb-6">
-          <h1 className="text-[25px] font-bold tracking-tight">{seriesName}</h1>
+          <h1 className="text-[21px] font-bold tracking-tight md:text-[25px]">{seriesName}</h1>
           <p className="mt-1 text-[13px] text-muted">
             {volumes.length} เล่ม
             {authors.length > 0 && <> · {authors.join(', ')}</>}
@@ -58,7 +58,7 @@ export default function SeriesPage({ params }: { params: Promise<{ name: string 
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(158px,1fr))] gap-x-[18px] gap-y-[22px]">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-x-3 gap-y-5 md:grid-cols-[repeat(auto-fill,minmax(158px,1fr))] md:gap-x-[18px] md:gap-y-[22px]">
             {volumes.map((b) => (
               <BookCard
                 key={b.id}

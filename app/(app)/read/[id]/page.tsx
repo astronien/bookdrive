@@ -126,24 +126,27 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
         className={`flex h-[52px] shrink-0 items-center gap-1.5 border-b px-3 transition-opacity ${chrome ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
         style={{ borderColor: 'rgba(128,128,128,.18)' }}
       >
-        <Link href="/library" className="shrink-0 rounded px-2 py-1 text-[13px] opacity-70 hover:opacity-100">← ไลบรารี</Link>
+        <Link href="/library" aria-label="กลับไปไลบรารี"
+          className="shrink-0 rounded px-2 py-1 text-[13px] opacity-70 hover:opacity-100">
+          <span className="md:hidden">←</span><span className="hidden md:inline">← ไลบรารี</span>
+        </Link>
 
         <button onClick={() => setPanel(panel === 'toc' ? null : 'toc')}
-          className="rounded px-2 py-1 text-[12.5px] opacity-70 hover:opacity-100" title="สารบัญ (T)">สารบัญ</button>
+          className="shrink-0 rounded px-2 py-1 text-[12.5px] opacity-70 hover:opacity-100" title="สารบัญ (T)">สารบัญ</button>
         {isEpub && (
           <>
             <button onClick={() => setPanel(panel === 'search' ? null : 'search')}
-              className="rounded px-2 py-1 text-[12.5px] opacity-70 hover:opacity-100" title="ค้นหาในเล่ม (F)">ค้นหา</button>
+              className="hidden shrink-0 rounded px-2 py-1 text-[12.5px] opacity-70 hover:opacity-100 sm:block" title="ค้นหาในเล่ม (F)">ค้นหา</button>
             <button onClick={() => setPanel(panel === 'notes' ? null : 'notes')}
-              className="rounded px-2 py-1 text-[12.5px] opacity-70 hover:opacity-100">
+              className="hidden shrink-0 rounded px-2 py-1 text-[12.5px] opacity-70 hover:opacity-100 sm:block">
               ไฮไลต์{anns.length ? ` (${anns.length})` : ''}
             </button>
           </>
         )}
 
         <div className="min-w-0 flex-1 px-2 text-center">
-          <div className="truncate text-[13px] font-semibold">{book.title}</div>
-          {chapter && <div className="truncate text-[10.5px] opacity-55">{chapter}</div>}
+          <div className="truncate text-[12.5px] font-semibold md:text-[13px]">{book.title}</div>
+          {chapter && <div className="hidden truncate text-[10.5px] opacity-55 sm:block">{chapter}</div>}
         </div>
 
         {formats.length > 1 && (
@@ -160,7 +163,7 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
         <button onClick={() => setPanel(panel === 'prefs' ? null : 'prefs')}
           className="shrink-0 rounded px-2 py-1 text-[14px] font-semibold opacity-70 hover:opacity-100">Aa</button>
         <button onClick={() => setChrome(false)} title="ซ่อนแถบเครื่องมือ"
-          className="shrink-0 rounded px-2 py-1 text-[12.5px] opacity-70 hover:opacity-100">⤢</button>
+          className="hidden shrink-0 rounded px-2 py-1 text-[12.5px] opacity-70 hover:opacity-100 sm:block">⤢</button>
       </header>
 
       {/* ---------- เนื้อหา ---------- */}
@@ -185,11 +188,11 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
         {isEpub && prefs.flow === 'paginated' && (
           <>
             <button onClick={() => epubRef.current?.prev()} aria-label="หน้าก่อน"
-              className="absolute left-0 top-0 h-full w-[9%] opacity-0 transition hover:opacity-100">
+              className="absolute left-0 top-0 flex h-full w-[16%] items-center opacity-0 transition hover:opacity-100 md:w-[9%]">
               <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-black/25 text-white">‹</span>
             </button>
             <button onClick={() => epubRef.current?.next()} aria-label="หน้าถัดไป"
-              className="absolute right-0 top-0 h-full w-[9%] opacity-0 transition hover:opacity-100">
+              className="absolute right-0 top-0 flex h-full w-[16%] items-center opacity-0 transition hover:opacity-100 md:w-[9%]">
               <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-black/25 text-white">›</span>
             </button>
           </>
@@ -222,14 +225,14 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
           <div className="h-full rounded bg-accent transition-[width]" style={{ width: `${percent}%` }} />
         </div>
         <span className="shrink-0 opacity-70">{Math.round(percent)}%</span>
-        {readMs > 0 && <span className="shrink-0 opacity-50">· {fmtDuration(readMs)}</span>}
+        {readMs > 0 && <span className="hidden shrink-0 opacity-50 sm:inline">· {fmtDuration(readMs)}</span>}
       </footer>
 
       {/* ---------- แผงด้านข้าง ---------- */}
       {panel && (
         <>
           <button aria-label="ปิด" onClick={() => setPanel(null)} className="fixed inset-0 z-30 bg-black/25" />
-          <aside className="fixed right-0 top-0 z-40 flex h-full w-[330px] flex-col bg-white text-ink shadow-2xl">
+          <aside className="fixed right-0 top-0 z-40 flex h-full w-full flex-col bg-white text-ink shadow-2xl sm:w-[330px]">
             <div className="flex h-[52px] shrink-0 items-center border-b border-line px-4">
               <b className="flex-1 text-[13.5px]">
                 {panel === 'toc' && 'สารบัญ'}

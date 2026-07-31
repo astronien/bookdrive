@@ -25,10 +25,10 @@ export default function RoomPage() {
 
   return (
     <div className="relative flex h-full flex-col">
-      <header className="flex h-14 shrink-0 items-center gap-3.5 border-b border-white/10 bg-[#12101a] px-5 text-white">
+      <header className="flex h-12 shrink-0 items-center gap-2.5 border-b border-white/10 bg-[#12101a] px-3 text-white md:h-14 md:gap-3.5 md:px-5">
         <Link href="/library" className="text-[13px] text-white/60 hover:text-white">← ไลบรารี</Link>
         <div className="flex-1 text-center text-[13px] font-semibold">ห้องอ่านหนังสือ</div>
-        <span className="text-[11.5px] text-white/40">
+        <span className="hidden text-[11.5px] text-white/40 sm:inline">
           {books.length > 260 ? `แสดง 260 จาก ${books.length} เล่ม` : `${books.length} เล่ม`}
         </span>
       </header>

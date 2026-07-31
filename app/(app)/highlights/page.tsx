@@ -81,7 +81,7 @@ export default function HighlightsPage() {
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-3.5 border-b border-line bg-white px-[22px]">
+      <header className="flex h-14 shrink-0 items-center gap-2.5 border-b border-line bg-white px-4 md:h-16 md:gap-3.5 md:px-[22px]">
         <h1 className="text-[15px] font-bold">ไฮไลต์ &amp; โน้ต</h1>
         <div className="flex-1" />
         <button
@@ -93,9 +93,9 @@ export default function HighlightsPage() {
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-[30px] pb-16 pt-6">
+      <div className="flex-1 overflow-y-auto px-4 pb-16 pt-5 md:px-[30px] md:pt-6">
         <div className="mb-5">
-          <h2 className="text-[25px] font-bold tracking-tight">ไฮไลต์ &amp; โน้ต</h2>
+          <h2 className="text-[21px] font-bold tracking-tight md:text-[25px]">ไฮไลต์ &amp; โน้ต</h2>
           <p className="mt-1 text-[13px] text-muted">
             {items.length} รายการจาก {new Set(items.map((i) => i.bookId)).size} เล่ม
           </p>
@@ -151,7 +151,7 @@ export default function HighlightsPage() {
         ) : !shown.length ? (
           <p className="text-[13px] text-muted">ไม่มีรายการที่ตรงกับตัวกรอง</p>
         ) : (
-          <div className="columns-1 gap-[18px] lg:columns-2">
+          <div className="columns-1 gap-4 lg:columns-2 lg:gap-[18px]">
             {shown.map((i) => {
               const b = titleOf(i.bookId);
               return (

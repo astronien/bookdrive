@@ -6,20 +6,20 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center border-b border-line bg-white px-[22px]">
+      <header className="flex h-14 shrink-0 items-center border-b border-line bg-white px-4 md:h-16 md:px-[22px]">
         <h1 className="text-[15px] font-bold">ตั้งค่า</h1>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-[30px] pb-16 pt-6">
+      <div className="flex-1 overflow-y-auto px-4 pb-16 pt-5 md:px-[30px] md:pt-6">
         <div className="mb-6">
-          <h2 className="text-[25px] font-bold tracking-tight">ตั้งค่า</h2>
+          <h2 className="text-[21px] font-bold tracking-tight md:text-[25px]">ตั้งค่า</h2>
           <p className="mt-1 text-[13px] text-muted">
             ข้อมูลทั้งหมดเก็บใน Google Drive ของคุณเอง ไม่มีอะไรอยู่บนเซิร์ฟเวอร์ของเรา
           </p>
         </div>
 
         {/* บัญชี — ต้อง render ฝั่ง server เพราะอ่าน session */}
-        <section className="mb-[18px] max-w-[680px] rounded-[13px] border border-line bg-white p-[22px]">
+        <section className="mb-4 max-w-[680px] rounded-[13px] border border-line bg-white p-4 md:p-[22px]">
           <h3 className="text-[14.5px] font-bold">การเชื่อมต่อ Google Drive</h3>
           <p className="mb-[18px] mt-1 text-[12.5px] text-muted">
             BookDrive เข้าถึงได้เฉพาะไฟล์ที่คุณเลือกหรือที่แอปสร้างเอง (scope <code>drive.file</code>)

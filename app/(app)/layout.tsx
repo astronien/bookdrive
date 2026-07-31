@@ -1,4 +1,4 @@
-import SidebarNav from '@/components/SidebarNav';
+import AppNav from '@/components/AppNav';
 import OfflineBar from '@/components/OfflineBar';
 import SessionBanner from '@/components/SessionBanner';
 import { auth } from '@/lib/auth';
@@ -19,17 +19,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen">
-      <aside className="flex w-[252px] shrink-0 flex-col bg-navy text-white">
-        <div className="flex h-16 items-center gap-2.5 px-[18px]">
-          <div className="grid h-[30px] w-[30px] place-items-center rounded-lg bg-accent text-[15px] font-bold text-navy">B</div>
-          <span className="text-[17px] font-bold tracking-tight">BookDrive</span>
-        </div>
-        <SidebarNav items={NAV} />
-        <div className="border-t border-white/10 px-[18px] py-3.5 text-[11.5px] text-[#9aa0c4]">
-          {session.user?.email}
-        </div>
-      </aside>
-      <main className="flex min-w-0 flex-1 flex-col">
+      <AppNav items={NAV} email={session.user?.email} />
+      {/* pt-14 เผื่อที่ให้แถบบนบนจอเล็ก ซึ่งเป็น fixed จึงไม่กินพื้นที่เอง */}
+      <main className="flex min-w-0 flex-1 flex-col pt-14 md:pt-0">
         <SessionBanner authAt={session.authAt} error={session.error} />
         <OfflineBar />
         {children}

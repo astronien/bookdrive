@@ -235,3 +235,16 @@ body { background: var(--color-shell); color: var(--color-ink); }
   .b-spine, .b-edge, .b-top, .b-back { display: none; }
   .b-shadow { transform: none; }
 }
+
+/* iOS Safari ซูมหน้าจอเข้าเองถ้า input มีขนาดตัวอักษรต่ำกว่า 16px
+   ซึ่งทำให้เลย์เอาต์เพี้ยนและผู้ใช้ต้องซูมออกเองทุกครั้ง */
+@media (max-width: 767px) {
+  input:not([type='range']):not([type='checkbox']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* กันแถบที่อยู่ล่างสุดโดนแถบ home indicator ของ iPhone ทับ */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }

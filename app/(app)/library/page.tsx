@@ -102,36 +102,39 @@ function LibraryInner() {
     <>
       {picking && <FolderPicker onPick={connect} onClose={() => setPicking(false)} />}
 
-      <header className="flex h-16 shrink-0 items-center gap-3 border-b border-line bg-white px-[22px]">
+      <header className="shrink-0 border-b border-line bg-white px-4 py-2.5 md:flex md:h-16 md:items-center md:gap-3 md:px-[22px] md:py-0">
         <input
           value={filters.query}
           onChange={(e) => setFilter({ query: e.target.value })}
           placeholder="ค้นหาชื่อเรื่อง ผู้เขียน ชุดหนังสือ หรือแท็ก…"
-          className="h-[38px] w-full max-w-[420px] rounded-[10px] border border-line bg-shell px-3.5 text-[13.5px] outline-none focus:border-accent focus:bg-white"
+          className="h-[38px] w-full rounded-[10px] border border-line bg-shell px-3.5 text-[16px] outline-none focus:border-accent focus:bg-white md:max-w-[420px] md:text-[13.5px]"
         />
-        <div className="flex-1" />
-        {calibreFolderId && (
-          <>
-            <button onClick={() => runScan(true)} disabled={busy}
-              title="อ่าน metadata.opf ใหม่ทุกเล่ม"
-              className="h-[38px] rounded-[10px] border border-line px-4 text-[13.5px] font-semibold transition hover:bg-shell disabled:opacity-50">
-              อัปเดต metadata
-            </button>
-            <button onClick={() => runScan(false)} disabled={busy}
-              className="h-[38px] rounded-[10px] border border-line px-4 text-[13.5px] font-semibold transition hover:bg-shell disabled:opacity-50">
-              {busy ? 'กำลังสแกน…' : 'สแกนไลบรารี'}
-            </button>
-          </>
-        )}
-        <button onClick={() => setPicking(true)}
-          className="h-[38px] rounded-[10px] bg-accent px-4 text-[13.5px] font-semibold text-[#08312e] transition hover:bg-accent-d">
-          {calibreFolderId ? 'เปลี่ยนโฟลเดอร์' : 'เชื่อม Calibre library'}
-        </button>
+        <div className="hidden md:block md:flex-1" />
+        {/* บนจอเล็กปุ่มเลื่อนแนวนอนแทนที่จะบีบให้เล็กจนกดยาก */}
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 md:mt-0 md:overflow-visible md:pb-0">
+          {calibreFolderId && (
+            <>
+              <button onClick={() => runScan(true)} disabled={busy}
+                title="อ่าน metadata.opf ใหม่ทุกเล่ม"
+                className="h-[38px] shrink-0 rounded-[10px] border border-line px-4 text-[13.5px] font-semibold transition hover:bg-shell disabled:opacity-50">
+                อัปเดต metadata
+              </button>
+              <button onClick={() => runScan(false)} disabled={busy}
+                className="h-[38px] shrink-0 rounded-[10px] border border-line px-4 text-[13.5px] font-semibold transition hover:bg-shell disabled:opacity-50">
+                {busy ? 'กำลังสแกน…' : 'สแกนไลบรารี'}
+              </button>
+            </>
+          )}
+          <button onClick={() => setPicking(true)}
+            className="h-[38px] shrink-0 rounded-[10px] bg-accent px-4 text-[13.5px] font-semibold text-[#08312e] transition hover:bg-accent-d">
+            {calibreFolderId ? 'เปลี่ยนโฟลเดอร์' : 'เชื่อม Calibre library'}
+          </button>
+        </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-[30px] pb-16 pt-6">
+      <div className="flex-1 overflow-y-auto px-4 pb-16 pt-5 md:px-[30px] md:pt-6">
         <div className="mb-4">
-          <h1 className="text-[25px] font-bold tracking-tight">
+          <h1 className="text-[21px] font-bold tracking-tight md:text-[25px]">
             {STATUS.find((s) => s.key === filters.status)?.label ?? 'หนังสือทั้งหมด'}
           </h1>
           <p className="mt-1 text-[13px] text-muted">
@@ -155,14 +158,14 @@ function LibraryInner() {
         )}
 
         {/* ---------- แถบกรอง ---------- */}
-        <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
           {STATUS.map((s) => (
             <Chip key={s.key} on={filters.status === s.key} onClick={() => setFilter({ status: s.key })}>
               {s.label}
             </Chip>
           ))}
 
-          <span className="mx-1 h-5 w-px bg-line" />
+          <span className="mx-1 h-5 w-px shrink-0 bg-line" />
 
           {FORMATS.map((f) => (
             <Chip key={f} on={filters.format === f} onClick={() => setFilter({ format: f })}>
@@ -170,7 +173,7 @@ function LibraryInner() {
             </Chip>
           ))}
 
-          <span className="mx-1 h-5 w-px bg-line" />
+          <span className="mx-1 h-5 w-px shrink-0 bg-line" />
 
           <Chip on={filters.offlineOnly} onClick={() => setFilter({ offlineOnly: !filters.offlineOnly })}>
             ออฟไลน์แล้ว
@@ -184,7 +187,7 @@ function LibraryInner() {
             </Chip>
           )}
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             {active && (
               <button onClick={() => { resetFilters(); setBrowse(null); }}
                 className="text-[12.5px] font-semibold text-accent-d hover:underline">
@@ -222,7 +225,7 @@ function LibraryInner() {
 
         {/* ---------- ผลลัพธ์ ---------- */}
         {loading ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(158px,1fr))] gap-x-[18px] gap-y-[22px]">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-x-3 gap-y-5 md:grid-cols-[repeat(auto-fill,minmax(158px,1fr))] md:gap-x-[18px] md:gap-y-[22px]">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="aspect-[2/3] animate-pulse rounded-[9px] bg-line" />
             ))}
@@ -245,7 +248,7 @@ function LibraryInner() {
             )}
           </Empty>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(158px,1fr))] gap-x-[18px] gap-y-[22px]">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-x-3 gap-y-5 md:grid-cols-[repeat(auto-fill,minmax(158px,1fr))] md:gap-x-[18px] md:gap-y-[22px]">
             {entries.map((e) =>
               e.kind === 'series'
                 ? <SeriesCard key={`s:${e.name}`} name={e.name} books={e.books} />
@@ -261,7 +264,7 @@ function LibraryInner() {
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick}
-      className={`h-8 rounded-full border px-3.5 text-[12.5px] font-medium transition ${on ? 'border-navy bg-navy text-white' : 'border-line bg-white text-muted hover:text-ink'}`}>
+      className={`h-8 shrink-0 whitespace-nowrap rounded-full border px-3.5 text-[12.5px] font-medium transition ${on ? 'border-navy bg-navy text-white' : 'border-line bg-white text-muted hover:text-ink'}`}>
       {children}
     </button>
   );
