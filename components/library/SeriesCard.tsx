@@ -30,7 +30,7 @@ export default function SeriesCard({ name, books }: { name: string; books: Book[
   return (
     <Link href={`/series/${encodeURIComponent(name)}`} className="group block">
       <TiltCard className="rounded-[9px]">
-        <div className="relative aspect-[2/3] drop-shadow-[0_6px_14px_rgba(25,29,68,.16)] transition-[filter] duration-300 group-hover:drop-shadow-[0_24px_38px_rgba(25,29,68,.30)]">
+        <div className="d3 relative aspect-[2/3]">
           {/* เล่มที่ซ้อนอยู่ข้างหลัง ถอยลึกคนละระยะเพื่อให้เกิด parallax ตอนเอียง */}
           <div
             className="absolute inset-y-2 left-3 right-[-7px] rounded-[9px] bg-line/70"

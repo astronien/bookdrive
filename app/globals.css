@@ -52,6 +52,8 @@ body { background: var(--color-shell); color: var(--color-ink); }
   pointer-events: none;
   position: absolute;
   inset: 0;
+  /* หน้าปกอยู่ที่ +depth/2 ถ้าไม่ดันขึ้นมา glare จะไปอยู่หลังปก */
+  transform: translateZ(26px);
   border-radius: inherit;
   opacity: var(--on);
   transition: opacity 0.3s ease;
@@ -72,6 +74,12 @@ body { background: var(--color-shell); color: var(--color-ink); }
 
 /* ---------- หนังสือเป็นกล่องสามมิติจริง ---------- */
 
+/* ชั้นใดก็ตามที่คั่นระหว่าง .tilt-inner กับ .book3d ต้องมีคลาสนี้
+   ค่าเริ่มต้นของ transform-style คือ flat ซึ่งจะยุบลูกทุกตัวลงมาระนาบเดียว
+   และห้ามใส่ filter (เช่น drop-shadow-*) บนชั้นเหล่านี้เด็ดขาด
+   เพราะ filter บังคับ flatten ทับ preserve-3d อีกที */
+.d3 { transform-style: preserve-3d; }
+
 .book3d {
   --d: 20px;
   position: absolute;
@@ -84,6 +92,23 @@ body { background: var(--color-shell); color: var(--color-ink); }
 .b-face {
   position: absolute;
   backface-visibility: hidden;
+}
+
+/* เงาทอดพื้น — เป็นแผ่นเบลอที่วางลึกกว่าตัวเล่ม
+   ใช้ filter บนตัวมันเองได้ เพราะไม่มีลูกที่ต้องการความลึก */
+.b-shadow {
+  position: absolute;
+  inset: 8% -6% -10% 8%;
+  border-radius: 12px;
+  background: rgba(25, 29, 68, 0.34);
+  filter: blur(13px);
+  transform: translateZ(calc(var(--d) * -1.6));
+  opacity: 0.5;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+.group:hover .b-shadow {
+  opacity: 0.85;
+  filter: blur(20px);
 }
 
 /* หน้าปก / หลังปก */
@@ -173,4 +198,5 @@ body { background: var(--color-shell); color: var(--color-ink); }
 @media (prefers-reduced-motion: reduce) {
   /* ไม่เอียงแล้วก็ไม่มีอะไรให้เห็นด้านข้าง ซ่อนไว้ลด DOM ที่ต้องวาด */
   .b-spine, .b-edge, .b-top, .b-back { display: none; }
+  .b-shadow { transform: none; }
 }

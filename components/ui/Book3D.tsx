@@ -28,6 +28,9 @@ export default function Book3D({
       className="book3d"
       style={{ '--d': `${depth}px` } as React.CSSProperties}
     >
+      {/* เงาทอดพื้น อยู่ในระบบ 3D เดียวกับตัวเล่ม */}
+      <div className="b-shadow" />
+
       {/* หลังปก — เห็นเฉพาะตอนเอียงแรง ๆ */}
       <div className="b-face b-back" style={{ background: colorDark }} />
 

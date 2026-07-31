@@ -37,7 +37,7 @@ export default function BookCard({
       <TiltCard className="rounded-[9px]">
         {/* ป้ายต่าง ๆ ต้องอยู่นอกกล่อง overflow-hidden
             เพราะ overflow-hidden ตัด preserve-3d ทิ้ง ลูกข้างในจะไม่ได้ความลึก */}
-        <div className="relative aspect-[2/3] drop-shadow-[0_6px_14px_rgba(25,29,68,.16)] transition-[filter] duration-300 group-hover:drop-shadow-[0_24px_38px_rgba(25,29,68,.30)]">
+        <div className="d3 relative aspect-[2/3]">
           <Book3D title={book.title} color={a} colorDark={b} depth={depth}
             cover={
               cover ? (
