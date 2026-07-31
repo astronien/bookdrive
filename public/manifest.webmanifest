@@ -1,0 +1,14 @@
+{
+  "name": "BookDrive",
+  "short_name": "BookDrive",
+  "description": "ไลบรารีอีบุ๊กบน Google Drive ของคุณเอง",
+  "start_url": "/library",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f6fa",
+  "theme_color": "#191d44",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

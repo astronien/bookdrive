@@ -7,6 +7,7 @@ import { db } from '@/lib/db/idb';
 import { pickFile, type BookFormat, type Annotation, type Progress } from '@/lib/types';
 import { DEFAULT_PREFS, FONT_STACK, THEMES, fmtDuration, loadPrefs, savePrefs, type ReaderPrefs } from '@/lib/reader/prefs';
 import { HIGHLIGHT_COLORS, listAnnotations, removeAnnotation } from '@/lib/reader/annotations';
+import OfflineButton from '@/components/OfflineButton';
 import type { EpubHandle, SearchHit, TocItem } from '@/components/reader/EpubReader';
 import type { PdfOutlineItem } from '@/components/reader/PdfReader';
 
@@ -296,6 +297,13 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
 
               {panel === 'prefs' && (
                 <div className="space-y-5 px-1">
+                  <Section label="ออฟไลน์">
+                    <OfflineButton book={book} className="w-full" />
+                    <p className="mt-1.5 text-[11px] text-muted">
+                      เก็บไฟล์ไว้ในเครื่องเพื่ออ่านตอนไม่มีเน็ต
+                    </p>
+                  </Section>
+
                   <Section label="ธีม">
                     <div className="grid grid-cols-4 gap-2">
                       {(Object.keys(THEMES) as (keyof typeof THEMES)[]).map((k) => (

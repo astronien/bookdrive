@@ -444,11 +444,29 @@ canvas: สีผ้าปกจาก hash ของ book id + ชื่อเ�
 **dispose ทุก texture/material ตอน unmount** — three.js ไม่เก็บกวาดให้อัตโนมัติ
 ถ้าลืม GPU memory จะรั่วทุกครั้งที่เข้าออกหน้านี้
 
+## 6.6 ผลสำรวจไลบรารีจริง — เหตุผลที่ไม่ทำ MOBI reader
+
+สำรวจข้อมูลจริงบน production ก่อนตัดสินใจ (221 เล่ม):
+
+| | จำนวน |
+|---|---|
+| มี EPUB | 220 |
+| มี MOBI | 193 |
+| **มี MOBI อย่างเดียว** | **0** |
+| ไม่มี EPUB เลย | 1 (เป็น txt) |
+
+**MOBI ทุกไฟล์เป็นคู่แฝดของ EPUB ที่มีอยู่แล้ว** การเขียน MOBI/AZW3 parser จึงไม่มีใครได้ใช้
+`FORMAT_RANK` จัด epub ไว้อันดับแรกอยู่แล้ว `pickFile()` จึงเลือก EPUB เสมอโดยอัตโนมัติ
+
+ตัวเลขอีกสองตัวที่กำหนดหน้าตาของตัวกรอง: มีแค่ **11/221 เล่มที่ติด tag**
+แต่มี **ผู้เขียน 76 คน** และ **102 เล่มอยู่ในชุดหนังสือ** — กรองตามผู้เขียนกับชุด
+จึงมีประโยชน์กว่ากรองตาม tag มาก
+
 ## 7. Offline
 
 | ชั้น | เก็บอะไร |
 |---|---|
-| Service Worker (Workbox) | app shell, JS/CSS bundle |
+| Service Worker (`public/sw.js`) | app shell + `/_next/static/*` |
 | IndexedDB `books` store | ไฟล์หนังสือเป็น Blob (ผู้ใช้กด "ดาวน์โหลด" เอง) |
 | IndexedDB `meta` store | library.json, progress, annotations ทุกเล่ม |
 | IndexedDB `outbox` store | คิวการเขียนที่ยังไม่ได้ sync |
@@ -457,6 +475,17 @@ canvas: สีผ้าปกจาก hash ของ book id + ชื่อเ�
 พอกลับมาออนไลน์ → `outbox` flush อัตโนมัติ (ใช้ Background Sync API ถ้ามี)
 
 ควรจำกัดโควตา: `navigator.storage.estimate()` แล้วเตือนเมื่อใช้เกิน 80%
+
+**service worker ไม่แคช `/api/drive/file/*`** เพราะตัวไฟล์หนังสือถูกเก็บใน IndexedDB
+อยู่แล้ว ถ้าแคชซ้ำอีกชั้นจะกินโควตาเบราว์เซอร์เป็นสองเท่าโดยไม่ได้อะไรเพิ่ม
+
+`/_next/static/*` ใช้ cache-first ได้เต็มที่เพราะ Next.js ใส่ hash ในชื่อไฟล์
+เนื้อหาเปลี่ยนเมื่อไหร่ชื่อเปลี่ยนตาม ส่วนหน้าเว็บใช้ network-first แล้วถอยไปหาแคช
+เพื่อไม่ให้ผู้ใช้ติดอยู่กับหน้าเก่า
+
+**อายุ session** แอปติด Testing mode ของ Google (เพราะ restricted scope) ทำให้
+refresh token อายุแค่ 7 วัน แก้ที่ต้นเหตุไม่ได้ถ้าไม่ผ่าน CASA จึงเก็บ `authAt`
+ไว้ใน JWT แล้วเตือนล่วงหน้า 2 วัน แทนที่จะปล่อยให้พังตอนกำลังอ่านค้างอยู่
 
 ---
 

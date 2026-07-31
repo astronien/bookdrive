@@ -19,6 +19,10 @@ declare module 'next-auth' {
   interface Session {
     accessToken?: string;
     error?: 'RefreshTokenError';
+    /** วินาที epoch ที่ access token จะหมดอายุ ใช้เตือนล่วงหน้า */
+    expiresAt?: number;
+    /** วินาที epoch ที่ล็อกอินครั้งล่าสุด — Testing mode ให้ refresh token อายุ 7 วัน */
+    authAt?: number;
   }
 }
 
@@ -68,6 +72,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           accessToken: account.access_token,
           refreshToken: account.refresh_token,
           expiresAt: account.expires_at,
+          authAt: Math.floor(Date.now() / 1000),
         };
       }
       // เหลืออายุ > 5 นาที ใช้ตัวเดิมได้
@@ -77,6 +82,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       session.accessToken = (token as any).accessToken;
       session.error = (token as any).error;
+      session.expiresAt = (token as any).expiresAt;
+      session.authAt = (token as any).authAt;
       return session;
     },
   },

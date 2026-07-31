@@ -1,4 +1,6 @@
-import Link from 'next/link';
+import SidebarNav from '@/components/SidebarNav';
+import OfflineBar from '@/components/OfflineBar';
+import SessionBanner from '@/components/SessionBanner';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
@@ -22,22 +24,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="grid h-[30px] w-[30px] place-items-center rounded-lg bg-accent text-[15px] font-bold text-navy">B</div>
           <span className="text-[17px] font-bold tracking-tight">BookDrive</span>
         </div>
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2.5 pb-4">
-          {NAV.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              className="block rounded-[9px] px-[11px] py-2.5 text-[13.5px] font-medium text-[#c3c8e4] transition hover:bg-navy-2 hover:text-white"
-            >
-              {n.label}
-            </Link>
-          ))}
-        </nav>
+        <SidebarNav items={NAV} />
         <div className="border-t border-white/10 px-[18px] py-3.5 text-[11.5px] text-[#9aa0c4]">
           {session.user?.email}
         </div>
       </aside>
-      <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+      <main className="flex min-w-0 flex-1 flex-col">
+        <SessionBanner authAt={session.authAt} error={session.error} />
+        <OfflineBar />
+        {children}
+      </main>
     </div>
   );
 }

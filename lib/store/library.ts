@@ -58,6 +58,19 @@ export type ShelfEntry =
   | { kind: 'book'; book: Book }
   | { kind: 'series'; name: string; books: Book[] };
 
+export type SortKey = 'title' | 'added' | 'opened' | 'progress' | 'author' | 'series';
+export type StatusFilter = 'all' | 'unread' | 'reading' | 'finished';
+
+export interface Filters {
+  query: string;
+  format: 'all' | BookFormat;
+  status: StatusFilter;
+  author: string | null;
+  tag: string | null;
+  /** แสดงเฉพาะเล่มที่ดาวน์โหลดไว้อ่านออฟไลน์แล้ว */
+  offlineOnly: boolean;
+}
+
 export interface ScanProgress {
   phase: 'idle' | 'listing' | 'metadata' | 'saving';
   done: number;
@@ -71,15 +84,19 @@ interface State {
   loading: boolean;
   scan: ScanProgress;
 
-  query: string;
-  format: 'all' | BookFormat;
+  filters: Filters;
+  sort: SortKey;
+  offlineIds: Set<string>;
 
   load: () => Promise<void>;
   connectCalibre: (folderId: string, name: string) => Promise<void>;
   scanCalibre: (refresh?: boolean) => Promise<number>;
-  setQuery: (q: string) => void;
-  setFormat: (f: State['format']) => void;
+  setFilter: (patch: Partial<Filters>) => void;
+  setSort: (s: SortKey) => void;
+  resetFilters: () => void;
+  refreshOffline: () => Promise<void>;
   filtered: () => Book[];
+  facets: () => { authors: [string, number][]; tags: [string, number][] };
   grouped: () => ShelfEntry[];
   setPreferredFormat: (bookId: string, f: BookFormat) => Promise<void>;
   saveProgress: (bookId: string, patch: Partial<Progress>) => Promise<void>;
@@ -95,8 +112,9 @@ export const useLibrary = create<State>((set, get) => ({
   books: [],
   loading: true,
   scan: { phase: 'idle', done: 0, total: 0 },
-  query: '',
-  format: 'all',
+  filters: { query: '', format: 'all', status: 'all', author: null, tag: null, offlineOnly: false },
+  sort: 'title',
+  offlineIds: new Set<string>(),
 
   async load() {
     const local = await db.meta.get('library');
@@ -251,14 +269,39 @@ export const useLibrary = create<State>((set, get) => ({
     return built.length;
   },
 
-  setQuery: (query) => set({ query }),
-  setFormat: (format) => set({ format }),
+  setFilter: (patch) => set({ filters: { ...get().filters, ...patch } }),
+  setSort: (sort) => set({ sort }),
+  resetFilters: () =>
+    set({ filters: { query: '', format: 'all', status: 'all', author: null, tag: null, offlineOnly: false } }),
+
+  /** เล่มไหนมีไฟล์อยู่ใน IndexedDB แล้วบ้าง — ใช้ทั้งกรองและแสดงไอคอน */
+  async refreshOffline() {
+    const rows = await db.blobs.toArray();
+    const have = new Set(rows.map((r) => r.driveFileId));
+    const ids = new Set<string>();
+    for (const b of get().books) {
+      if (b.files.some((f) => have.has(f.driveFileId))) ids.add(b.id);
+    }
+    set({ offlineIds: ids });
+  },
 
   filtered() {
-    const { books, query, format } = get();
-    const q = query.trim().toLowerCase();
-    return books.filter((b) => {
-      if (format !== 'all' && !b.files.some((f) => f.format === format)) return false;
+    const { books, filters: f, sort, offlineIds } = get();
+    const q = f.query.trim().toLowerCase();
+
+    const out = books.filter((b) => {
+      if (f.format !== 'all' && !b.files.some((x) => x.format === f.format)) return false;
+      if (f.author && !b.authors.includes(f.author)) return false;
+      if (f.tag && !b.tags.includes(f.tag)) return false;
+      if (f.offlineOnly && !offlineIds.has(b.id)) return false;
+
+      if (f.status !== 'all') {
+        // ไม่เชื่อ b.status อย่างเดียว เพราะเล่มเก่าที่สแกนมาก่อนยังเป็น unread ทั้งที่อ่านไปแล้ว
+        const pct = b.percent ?? 0;
+        const st = pct >= 95 ? 'finished' : pct > 0 ? 'reading' : 'unread';
+        if (st !== f.status) return false;
+      }
+
       if (!q) return true;
       return (
         b.title.toLowerCase().includes(q) ||
@@ -267,6 +310,39 @@ export const useLibrary = create<State>((set, get) => ({
         (b.series?.name.toLowerCase().includes(q) ?? false)
       );
     });
+
+    const byTitle = (a: Book, b: Book) => a.title.localeCompare(b.title, 'th');
+    const desc = (x?: string, y?: string) => (y ?? '').localeCompare(x ?? '');
+
+    switch (sort) {
+      case 'added': out.sort((a, b) => desc(a.addedAt, b.addedAt) || byTitle(a, b)); break;
+      case 'opened': out.sort((a, b) => desc(a.lastOpenedAt, b.lastOpenedAt) || byTitle(a, b)); break;
+      case 'progress': out.sort((a, b) => (b.percent ?? 0) - (a.percent ?? 0) || byTitle(a, b)); break;
+      case 'author': out.sort((a, b) => (a.authors[0] ?? '').localeCompare(b.authors[0] ?? '', 'th') || byTitle(a, b)); break;
+      case 'series':
+        out.sort((a, b) =>
+          (a.series?.name ?? 'zzz').localeCompare(b.series?.name ?? 'zzz', 'th') ||
+          (a.series?.index ?? 0) - (b.series?.index ?? 0) ||
+          byTitle(a, b));
+        break;
+      default: out.sort(byTitle);
+    }
+    return out;
+  },
+
+  /** นับจำนวนต่อผู้เขียน/แท็ก เพื่อให้เมนูกรองบอกได้ว่ามีกี่เล่ม */
+  facets() {
+    const authors = new Map<string, number>();
+    const tags = new Map<string, number>();
+    for (const b of get().books) {
+      for (const a of b.authors) authors.set(a, (authors.get(a) ?? 0) + 1);
+      for (const t of b.tags) tags.set(t, (tags.get(t) ?? 0) + 1);
+    }
+    const sortFn = (a: [string, number], b: [string, number]) => b[1] - a[1] || a[0].localeCompare(b[0], 'th');
+    return {
+      authors: [...authors.entries()].sort(sortFn),
+      tags: [...tags.entries()].sort(sortFn),
+    };
   },
 
   /**

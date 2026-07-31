@@ -19,11 +19,13 @@ function hashOf(s: string) {
 }
 
 export default function BookCard({
-  book, badge,
+  book, badge, offline,
 }: {
   book: Book;
   /** ป้ายเสริมมุมซ้ายบน เช่น เลขเล่มในหน้าชุดหนังสือ */
   badge?: React.ReactNode;
+  /** ดาวน์โหลดไว้อ่านออฟไลน์แล้ว */
+  offline?: boolean;
 }) {
   const [coverFailed, setCoverFailed] = useState(false);
   const [a, b] = PALETTES[hashOf(book.id) % PALETTES.length];
@@ -68,6 +70,18 @@ export default function BookCard({
               </div>
             )}
           </Book3D>
+
+          {offline && (
+            <span
+              title="ดาวน์โหลดไว้อ่านออฟไลน์แล้ว"
+              className="pointer-events-none absolute bottom-2 right-2 grid h-5 w-5 place-items-center rounded-full bg-accent text-[#08312e] shadow"
+              style={{ transform: 'translateZ(30px)' }}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </span>
+          )}
 
           {badge && (
             <div
