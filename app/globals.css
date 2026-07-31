@@ -69,3 +69,108 @@ body { background: var(--color-shell); color: var(--color-ink); }
   .tilt-inner { transform: none !important; transition: none; }
   .tilt-glare { display: none; }
 }
+
+/* ---------- หนังสือเป็นกล่องสามมิติจริง ---------- */
+
+.book3d {
+  --d: 20px;
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  /* ดันตัวกล่องมาข้างหน้าครึ่งความหนา ให้หน้าปกอยู่ระนาบเดิมกับตอนไม่เอียง */
+  transform: translateZ(calc(var(--d) / -2));
+}
+
+.b-face {
+  position: absolute;
+  backface-visibility: hidden;
+}
+
+/* หน้าปก / หลังปก */
+.b-front,
+.b-back {
+  inset: 0;
+  border-radius: 9px;
+  overflow: hidden;
+}
+.b-front { transform: translateZ(calc(var(--d) / 2)); }
+.b-back {
+  transform: translateZ(calc(var(--d) / -2)) rotateY(180deg);
+  border-radius: 9px 3px 3px 9px;
+}
+
+/* สันปก — อยู่ขอบซ้าย หันออกทางซ้าย
+   transform-origin ที่ขอบซ้ายทำให้หมุนแล้วยังติดขอบพอดี
+   translateZ ต้องมาก่อน rotateY เพื่อให้เลื่อนในระนาบของกล่อง ไม่ใช่ของหน้าที่หมุนแล้ว */
+.b-spine {
+  top: 0;
+  left: 0;
+  width: var(--d);
+  height: 100%;
+  transform-origin: left center;
+  transform: translateZ(calc(var(--d) / -2)) rotateY(-90deg);
+  border-radius: 3px 0 0 3px;
+  box-shadow: inset -2px 0 6px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.b-spine-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  max-height: 86%;
+  padding: 6px 0;
+}
+
+/* ขอบกระดาษด้านเปิด — เส้นถี่ ๆ ให้ดูเป็นปึกหน้ากระดาษ */
+.b-edge {
+  top: 0;
+  left: 100%;
+  width: var(--d);
+  height: 100%;
+  transform-origin: left center;
+  transform: translateZ(calc(var(--d) / 2)) rotateY(90deg);
+  border-radius: 0 3px 3px 0;
+  background:
+    repeating-linear-gradient(
+      to right,
+      #f6efe1 0px,
+      #f6efe1 1px,
+      #dccdb2 1px,
+      #dccdb2 2px
+    );
+  box-shadow: inset 2px 0 5px rgba(0, 0, 0, 0.22);
+}
+
+/* ขอบกระดาษด้านบน */
+.b-top {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--d);
+  transform-origin: center top;
+  transform: translateZ(calc(var(--d) / -2)) rotateX(90deg);
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      #f6efe1 0px,
+      #f6efe1 1px,
+      #dccdb2 1px,
+      #dccdb2 2px
+    );
+  box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* ไม่เอียงแล้วก็ไม่มีอะไรให้เห็นด้านข้าง ซ่อนไว้ลด DOM ที่ต้องวาด */
+  .b-spine, .b-edge, .b-top, .b-back { display: none; }
+}
