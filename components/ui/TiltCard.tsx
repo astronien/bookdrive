@@ -21,7 +21,7 @@ interface Props {
  * และ throttle ด้วย rAF เพราะ pointermove ยิงถี่กว่าเฟรมเรตจอ
  */
 export default function TiltCard({
-  children, className = '', max = 20, lift = 10, glare = 0.3,
+  children, className = '', max = 26, lift = 10, glare = 0.3,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const raf = useRef(0);
@@ -78,7 +78,7 @@ export default function TiltCard({
       onPointerEnter={onEnter}
       onPointerLeave={onLeave}
       className={`tilt ${className}`}
-      style={{ perspective: '720px' }}
+      style={{ perspective: '620px' }}
     >
       <div className="tilt-inner">
         {children}

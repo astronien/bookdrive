@@ -119,6 +119,22 @@ body { background: var(--color-shell); color: var(--color-ink); }
   overflow: hidden;
 }
 .b-front { transform: translateZ(calc(var(--d) / 2)); }
+
+/* รอยบานพับริมสัน — ตาคนอ่านสิ่งนี้เป็น "ความหนา" ทันทีแม้ยังไม่เอียง */
+.b-front::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 9px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.34),
+    rgba(0, 0, 0, 0.1) 55%,
+    rgba(255, 255, 255, 0.16) 78%,
+    rgba(0, 0, 0, 0)
+  );
+  pointer-events: none;
+}
 .b-back {
   transform: translateZ(calc(var(--d) / -2)) rotateY(180deg);
   border-radius: 9px 3px 3px 9px;
@@ -145,7 +161,7 @@ body { background: var(--color-shell); color: var(--color-ink); }
 .b-spine-text {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: rgba(255, 255, 255, 0.92);
@@ -168,12 +184,12 @@ body { background: var(--color-shell); color: var(--color-ink); }
   background:
     repeating-linear-gradient(
       to right,
-      #f6efe1 0px,
-      #f6efe1 1px,
-      #dccdb2 1px,
-      #dccdb2 2px
+      #faf4e8 0px,
+      #faf4e8 1.5px,
+      #cbb894 1.5px,
+      #cbb894 2.5px
     );
-  box-shadow: inset 2px 0 5px rgba(0, 0, 0, 0.22);
+  box-shadow: inset 3px 0 8px rgba(0, 0, 0, 0.3);
 }
 
 /* ขอบกระดาษด้านบน */

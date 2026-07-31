@@ -30,7 +30,7 @@ export default function BookCard({
   const formats = [...new Set(book.files.map((f) => f.format))];
   // ความหนาผันตามขนาดไฟล์ — ทุกเล่มหนาเท่ากันจะดูเป็นของปลอมทันที
   const bytes = book.files.reduce((n, f) => n + (f.size || 0), 0);
-  const depth = Math.round(13 + Math.min(1, Math.log10(Math.max(bytes, 1) / 3e5 + 1) / 1.6) * 20);
+  const depth = Math.round(24 + Math.min(1, Math.log10(Math.max(bytes, 1) / 3e5 + 1) / 1.6) * 26);
 
   return (
     <Link href={`/read/${book.id}`} className="group block">

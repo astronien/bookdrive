@@ -41,7 +41,7 @@ export default function SeriesCard({ name, books }: { name: string; books: Book[
             style={{ transform: 'translateZ(-26px)' }}
           />
 
-          <Book3D title={name} color={a} colorDark={b} depth={22}
+          <Book3D title={name} color={a} colorDark={b} depth={40}
             cover={
               cover ? (
                 // eslint-disable-next-line @next/next/no-img-element
