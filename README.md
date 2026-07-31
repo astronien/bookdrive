@@ -59,6 +59,7 @@ lib/
 - [x] EPUB reader + บันทึกตำแหน่งอ่าน (CFI)
 - [x] Sync engine + conflict merge
 - [x] Cache ออฟไลน์ (IndexedDB)
+- [x] ห้องอ่านหนังสือ 3 มิติ (three.js) — เดินดูชั้นหนังสือแล้วหยิบมาอ่าน
 - [ ] PDF reader (pdf.js virtualized)
 - [x] หน้า /settings และ /highlights
 - [ ] UI ไฮไลต์ในหน้าอ่าน (หน้ารวมพร้อมแล้ว รอตัวที่สร้างข้อมูล)

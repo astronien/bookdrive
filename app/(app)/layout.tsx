@@ -7,6 +7,7 @@ const NAV = [
   { href: '/library?status=reading', label: 'กำลังอ่าน' },
   { href: '/library?status=finished', label: 'อ่านจบแล้ว' },
   { href: '/highlights', label: 'ไฮไลต์ & โน้ต' },
+  { href: '/room', label: 'ห้องอ่านหนังสือ 3D' },
   { href: '/settings', label: 'ตั้งค่า' },
 ];
 
