@@ -60,9 +60,10 @@ lib/
 - [x] Sync engine + conflict merge
 - [x] Cache ออฟไลน์ (IndexedDB)
 - [x] ห้องอ่านหนังสือ 3 มิติ (three.js) — เดินดูชั้นหนังสือแล้วหยิบมาอ่าน
-- [ ] PDF reader (pdf.js virtualized)
+- [x] PDF reader (pdf.js, เรนเดอร์เฉพาะหน้าใกล้ viewport + สารบัญ + ซูม)
 - [x] หน้า /settings และ /highlights
-- [ ] UI ไฮไลต์ในหน้าอ่าน (หน้ารวมพร้อมแล้ว รอตัวที่สร้างข้อมูล)
+- [x] ไฮไลต์ 5 สี + ค้นหาทั้งเล่ม + สารบัญ + นับเวลาอ่าน
+- [ ] โน้ตประกอบไฮไลต์ (ตอนนี้เก็บได้แต่ยังไม่มี UI ใส่ข้อความ)
 - [ ] Service Worker / PWA
 - [ ] CBZ/CBR, TTS, export Markdown
 
