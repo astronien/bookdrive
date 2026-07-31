@@ -364,7 +364,7 @@ export function buildWorld(scene: THREE.Scene, cases: Bookcase[]): World {
         const arr = p.geometry.getAttribute('position') as THREE.BufferAttribute;
         for (let i = 0; i < arr.count; i++) {
           let y = arr.getY(i) + 0.0016;
-          let x = arr.getX(i) + Math.sin(t * 0.5 + i) * 0.0009;
+          const x = arr.getX(i) + Math.sin(t * 0.5 + i) * 0.0009;
           if (y > 3.6) y = 0.25;
           arr.setY(i, y);
           arr.setX(i, x);

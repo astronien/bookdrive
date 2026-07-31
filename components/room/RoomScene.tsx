@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import type { Book } from '@/lib/types';
 import { makeSpineCanvas } from '@/lib/room/spine';
-import { ROOM, layoutBooks, makeBookcases } from '@/lib/room/layout';
+import { ROOM, SHELF_CONF, layoutBooks, makeBookcases } from '@/lib/room/layout';
 import { buildWorld } from '@/lib/room/props';
 
 /** จำกัดจำนวนเล่มที่ render — เกินกว่านี้เฟรมเรตตกและกินหน่วยความจำ texture มาก */
@@ -163,7 +163,7 @@ export default function RoomScene({
 
     const HALF_W = ROOM.w / 2 - 0.6;
     const HALF_D = ROOM.d / 2 - 0.6;
-    const CASE_CLEAR = CASE_DEPTH + 0.45;
+    const CASE_CLEAR = SHELF_CONF.CASE_DEPTH + 0.45;
 
     const tick = () => {
       raf = requestAnimationFrame(tick);
