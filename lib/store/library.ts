@@ -54,6 +54,45 @@ async function pool<T, R>(
   return out;
 }
 
+/** ค่าที่ใช้เรียงของการ์ดหนึ่งใบ — ชุดหนังสือต้องยุบหลายเล่มให้เหลือค่าเดียว */
+function entryKeys(e: ShelfEntry) {
+  const books = e.kind === 'book' ? [e.book] : e.books;
+  const max = (f: (b: Book) => string | undefined) =>
+    books.reduce((acc, b) => { const v = f(b); return v && v > acc ? v : acc; }, '');
+
+  return {
+    title: e.kind === 'book' ? e.book.title : e.name,
+    // เล่มไหนในชุดที่เพิ่ง "เพิ่ม/เปิด" ล่าสุด ให้ถือเป็นของทั้งชุด
+    added: max((b) => b.addedAt),
+    opened: max((b) => b.lastOpenedAt),
+    // ใช้ค่าเฉลี่ย ไม่ใช่ค่าสูงสุด — อ่านจบ 1 เล่มจาก 20 เล่มไม่ใช่ชุดที่ใกล้จบ
+    progress: books.reduce((s, b) => s + (b.percent ?? 0), 0) / books.length,
+    author: books[0]?.authors[0] ?? '',
+    isSeries: e.kind === 'series',
+  };
+}
+
+/** comparator ของหน้าไลบรารี ให้ตรงกับ SortKey ที่ผู้ใช้เลือกจริงๆ */
+function entryCmp(sort: SortKey) {
+  return (x: ShelfEntry, y: ShelfEntry) => {
+    const a = entryKeys(x);
+    const b = entryKeys(y);
+    const byTitle = a.title.localeCompare(b.title, 'th');
+    // ค่าว่างต้องไปท้ายเสมอ ไม่ใช่ขึ้นหัวเพราะ '' น้อยกว่าทุกอย่าง
+    const descStr = (p: string, q: string) => (p === q ? 0 : !p ? 1 : !q ? -1 : q.localeCompare(p));
+
+    switch (sort) {
+      case 'added': return descStr(a.added, b.added) || byTitle;
+      case 'opened': return descStr(a.opened, b.opened) || byTitle;
+      case 'progress': return b.progress - a.progress || byTitle;
+      case 'author': return a.author.localeCompare(b.author, 'th') || byTitle;
+      // เรียงตามชุด = ชุดหนังสือขึ้นก่อน แล้วค่อยตามด้วยเล่มเดี่ยว
+      case 'series': return Number(b.isSeries) - Number(a.isSeries) || byTitle;
+      default: return byTitle;
+    }
+  };
+}
+
 /** การ์ดหนึ่งใบในหน้าไลบรารี — เล่มเดี่ยว หรือชุดหนังสือที่ยุบรวมกัน */
 export type ShelfEntry =
   | { kind: 'book'; book: Book }
@@ -209,11 +248,16 @@ export const useLibrary = create<State>((set, get) => ({
       const files = [...f.files].sort((a, b) => FORMAT_RANK[a.format] - FORMAT_RANK[b.format]);
       const prev = known.get(f.folderId);
 
+      // "เพิ่มเมื่อ" ต้องเป็นเวลาที่ไฟล์ขึ้นไปอยู่บน Drive ไม่ใช่เวลาที่เรากดสแกน
+      // ถ้าใช้เวลาสแกน หนังสือทุกเล่มจะได้ timestamp เดียวกันหมด แล้ว "เรียงตามเพิ่มล่าสุด"
+      // ก็ไม่ต่างจากเรียงตามชื่อเรื่องเลย (เจอจริงตอนทดสอบ: 221 เล่ม addedAt ซ้ำกันทั้งหมด)
+      const driveAdded = files.reduce((acc, x) => (x.modifiedTime > acc ? x.modifiedTime : acc), '');
+
       return {
         metaSource: source,
         // เก็บสิ่งที่เป็นของผู้ใช้ไว้เสมอตอน refresh — id ผูกกับ progress/ไฮไลต์
         id: prev?.id ?? crypto.randomUUID(),
-        addedAt: prev?.addedAt ?? now,
+        addedAt: driveAdded || prev?.addedAt || now,
         lastOpenedAt: prev?.lastOpenedAt,
         status: prev?.status ?? 'unread',
         percent: prev?.percent ?? 0,
@@ -430,11 +474,9 @@ export const useLibrary = create<State>((set, get) => ({
       }
     }
 
-    return out.sort((a, b) => {
-      const ta = a.kind === 'book' ? a.book.title : a.name;
-      const tb = b.kind === 'book' ? b.book.title : b.name;
-      return ta.localeCompare(tb, 'th');
-    });
+    // ต้องเรียงซ้ำตรงนี้ ไม่ใช่พึ่งลำดับจาก filtered()
+    // เพราะการยุบชุดหนังสือทำลายลำดับเดิมไปแล้ว (singles ถูก push ก่อน series เสมอ)
+    return out.sort(entryCmp(get().sort));
   },
 
   async setPreferredFormat(bookId, f) {
