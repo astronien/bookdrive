@@ -123,17 +123,23 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
                 src={cover}
                 alt=""
                 aria-hidden
-                className="absolute inset-0 h-full w-full object-cover object-center brightness-[0.5]"
+                className="absolute inset-0 h-full w-full object-cover object-center brightness-[0.85]"
               />
             )}
 
             {/* ผ้าคลุมสองทิศ — ซ้ายไปขวากันตัวหนังสือจมภาพ ล่างขึ้นบนกันปุ่มจมภาพ
-                ถ้าใช้ทิศเดียวจะมีปกบางเล่มที่สว่างจัดตรงมุมแล้วอ่านไม่ออก */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0b0d14] via-[#0b0d14]/85 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0b0d14] via-[#0b0d14]/35 to-transparent" />
+                ถ้าใช้ทิศเดียวจะมีปกบางเล่มที่สว่างจัดตรงมุมแล้วอ่านไม่ออก
+
+                ค่าความทึบต้องคิดแบบคูณกัน ไม่ใช่บวก เพราะสองชั้นนี้ทับกัน
+                ที่มุมซ้ายล่างซึ่งเป็นที่อยู่ของข้อความ ความสว่างที่เหลือ =
+                brightness × (1 - ทึบซ้าย) × (1 - ทึบล่าง)
+                ของเดิม 0.5 × 0 × 0 = ดำสนิท มองไม่เห็นปกเลย
+                ของใหม่ 0.85 × 0.30 × 0.55 ≈ 0.14 — ยังเห็นภาพแต่ตัวหนังสือขาวยังอ่านออก */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
 
             <div className="relative z-10 flex min-h-[330px] flex-col justify-end p-5 sm:min-h-[360px] sm:p-8">
-              <div className="max-w-[min(100%,520px)]">
+              <div className="max-w-[min(100%,520px)] [text-shadow:0_1px_4px_rgb(0_0_0/0.85)]">
                 {/* ปกใบเล็กเหนือชื่อเรื่อง — ภาพพื้นหลังโดน crop จนดูไม่ออกว่าปกหน้าตายังไง
                     ใบนี้เลยเป็นตัวที่ให้เห็นทั้งใบจริง ๆ จงใจทำเล็กไม่ให้แย่งที่ชื่อเรื่อง */}
                 <div className="mb-3 flex items-end gap-3">
@@ -156,16 +162,16 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
                 </h2>
 
                 {book.authors.length > 0 && (
-                  <div className="mt-1.5 text-[13.5px] font-semibold text-white/80">
+                  <div className="mt-1.5 text-[13.5px] font-semibold text-white/90">
                     {book.authors.join(', ')}
                   </div>
                 )}
 
                 {chips.length > 0 && (
-                  <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-semibold text-white/60">
+                  <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-semibold text-white/75">
                     {chips.map((c, i) => (
                       <span key={c + i} className="flex items-center gap-2">
-                        {i > 0 && <span className="text-white/30">•</span>}
+                        {i > 0 && <span className="text-white/40">•</span>}
                         {c}
                       </span>
                     ))}
@@ -173,12 +179,12 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
                 )}
 
                 {plain && (
-                  <p className="mt-3 line-clamp-3 text-[13px] leading-relaxed text-white/75">{plain}</p>
+                  <p className="mt-3 line-clamp-3 text-[13px] leading-relaxed text-white/85">{plain}</p>
                 )}
 
                 {pct > 0 && (
                   <div className="mt-4 max-w-[300px]">
-                    <div className="mb-1 flex justify-between text-[11px] font-semibold text-white/70">
+                    <div className="mb-1 flex justify-between text-[11px] font-semibold text-white/80">
                       <span>อ่านไปแล้ว</span><span>{pct}%</span>
                     </div>
                     <div className="h-[4px] w-full rounded-full bg-white/25">
@@ -192,7 +198,7 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
                   <button
                     onClick={() => router.push(`/read/${book.id}`)}
                     className="inline-flex h-[44px] items-center gap-2 rounded-full bg-white px-6
-                               text-[14px] font-bold text-[#0b0d14] shadow-lg transition hover:bg-white/85"
+                               text-[14px] font-bold text-[#0b0d14] shadow-lg transition hover:bg-white/85 [text-shadow:none]"
                   >
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                       <path d="M6 4.5v15l13-7.5z" />
