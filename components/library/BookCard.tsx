@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import TiltCard from '@/components/ui/TiltCard';
 import Book3D from '@/components/ui/Book3D';
+import BookSheet from '@/components/library/BookSheet';
 import { FormatTag } from '@/components/ui/Tag';
 import type { Book } from '@/lib/types';
 
@@ -28,6 +28,8 @@ export default function BookCard({
   offline?: boolean;
 }) {
   const [coverFailed, setCoverFailed] = useState(false);
+  // คลิกการ์ดแล้วเปิดรายละเอียดก่อน ไม่กระโดดเข้าโปรแกรมอ่านทันที
+  const [open, setOpen] = useState(false);
   const [a, b] = PALETTES[hashOf(book.id) % PALETTES.length];
   const cover = book.coverFileId && !coverFailed ? `/api/drive/file/${book.coverFileId}` : null;
   const formats = [...new Set(book.files.map((f) => f.format))];
@@ -36,7 +38,10 @@ export default function BookCard({
   const depth = Math.round(24 + Math.min(1, Math.log10(Math.max(bytes, 1) / 3e5 + 1) / 1.6) * 26);
 
   return (
-    <Link href={`/read/${book.id}`} className="group block">
+    <>
+    {/* button ไม่ใช่ Link เพราะปลายทางเป็น modal ไม่ใช่ URL
+        ต้องบังคับ w-full/text-left เอง ไม่งั้นข้อความใต้ปกจะถูกจัดกลางตามค่า default ของปุ่ม */}
+    <button type="button" onClick={() => setOpen(true)} className="group block w-full text-left">
       <TiltCard className="rounded-[9px]">
         {/* ป้ายต่าง ๆ ต้องอยู่นอกกล่อง overflow-hidden
             เพราะ overflow-hidden ตัด preserve-3d ทิ้ง ลูกข้างในจะไม่ได้ความลึก */}
@@ -110,6 +115,10 @@ export default function BookCard({
           {formats.map((f) => <FormatTag key={f} format={f} />)}
         </div>
       </div>
-    </Link>
+    </button>
+
+    {/* เรนเดอร์นอกปุ่ม — sheet มีปุ่มข้างในอีกหลายตัว ซ้อนใน button จะได้ HTML ที่ไม่ถูกต้อง */}
+    {open && <BookSheet book={book} onClose={() => setOpen(false)} />}
+    </>
   );
 }

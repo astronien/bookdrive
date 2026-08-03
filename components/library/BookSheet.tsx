@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import OfflineButton from '@/components/OfflineButton';
@@ -22,6 +23,9 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
   const setPreferredFormat = useLibrary((s) => s.setPreferredFormat);
   const saveProgress = useLibrary((s) => s.saveProgress);
   const [busy, setBusy] = useState(false);
+  // ต้องรอ mount ก่อนถึงจะมี document ให้ portal ใช้ — SSR ไม่มี DOM
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const formats = useMemo(
     () => [...new Set(book.files.map((f) => f.format))],
@@ -60,7 +64,12 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
     ['ISBN', book.isbn],
   ];
 
-  return (
+  if (!mounted) return null;
+
+  /* ยิงเข้า document.body ผ่าน portal — การ์ดหนังสืออยู่ใน TiltCard ที่มี transform
+     ซึ่งทำให้ position:fixed ยึดกับการ์ดแทนที่จะยึดกับ viewport แล้ว modal จะไปโผล่
+     ในกรอบการ์ดใบเล็ก ๆ แทนที่จะเต็มจอ */
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex sm:items-center sm:justify-center sm:p-6"
       role="dialog"
@@ -181,12 +190,13 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
 
           {/* ---------- ปุ่มหลัก ----------
               บนมือถือปักไว้ล่างสุดแบบ sticky เพราะเรื่องย่อยาว ๆ จะดันปุ่มตกจอไป */}
+          {/* ปุ่มหลัก: เขียว = อ่านต่อ / น้ำเงิน = เริ่มใหม่ ให้ตรงกับแถว "อ่านต่อ" ที่ใช้ text-mint */}
           <div className="sticky bottom-0 z-10 -mx-5 mt-6 flex flex-wrap gap-2 border-t border-line
                           bg-white/95 px-5 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
             <button
               onClick={() => router.push(`/read/${book.id}`)}
-              className="h-[42px] flex-1 rounded-[10px] bg-brand px-6 text-[13.5px] font-bold text-white
-                         transition hover:brightness-110 sm:flex-none"
+              className={`h-[42px] flex-1 rounded-[10px] px-6 text-[13.5px] font-bold text-white
+                          transition hover:brightness-110 sm:flex-none ${pct > 0 ? 'bg-mint' : 'bg-brand'}`}
             >
               {pct > 0 ? `อ่านต่อ · ${pct}%` : 'เริ่มอ่าน'}
             </button>
@@ -238,6 +248,7 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
