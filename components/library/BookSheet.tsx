@@ -88,8 +88,11 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
                    sm:max-h-[86vh] sm:w-[min(760px,100%)] sm:rounded-2xl"
       >
         {/* ---------- ปกจาง ๆ เป็นพื้นหลังส่วนหัว ----------
-            เบลอแรงและกดความทึบลงเพื่อให้ตัวหนังสือดำบนขาวยังอ่านออก
-            ไล่เฉดลงไปหาขาวด้านล่าง ไม่งั้นขอบภาพจะตัดเป็นเส้นตรงดูแข็ง */}
+            ไล่เฉดลงไปหาขาวด้านล่าง ไม่งั้นขอบภาพจะตัดเป็นเส้นตรงดูแข็ง
+
+            brightness-125 สำคัญกว่าที่คิด — ปกเล่มที่พื้นดำจะทำให้แถบนี้มืด
+            จนตัวหนังสือสีเข้มอ่านไม่ออก ดันความสว่างขึ้นแล้วเร่ง saturate แทน
+            จะได้ "คราบสีของปก" ไม่ใช่ "รูปปกมืด ๆ" ที่บังข้อความ */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[340px] overflow-hidden">
           {cover && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -97,10 +100,10 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
               src={cover}
               alt=""
               aria-hidden
-              className="h-full w-full scale-125 object-cover opacity-[0.22] blur-2xl saturate-150"
+              className="h-full w-full scale-125 object-cover opacity-45 blur-3xl saturate-[1.8] brightness-125"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/70 to-white" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-white/60 to-white" />
         </div>
 
         <button
