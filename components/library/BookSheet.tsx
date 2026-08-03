@@ -123,7 +123,7 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
                 src={cover}
                 alt=""
                 aria-hidden
-                className="absolute inset-0 h-full w-full object-cover object-center brightness-[0.85]"
+                className="absolute inset-0 h-full w-full object-cover object-center brightness-[0.8]"
               />
             )}
 
@@ -133,10 +133,11 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
                 ค่าความทึบต้องคิดแบบคูณกัน ไม่ใช่บวก เพราะสองชั้นนี้ทับกัน
                 ที่มุมซ้ายล่างซึ่งเป็นที่อยู่ของข้อความ ความสว่างที่เหลือ =
                 brightness × (1 - ทึบซ้าย) × (1 - ทึบล่าง)
-                ของเดิม 0.5 × 0 × 0 = ดำสนิท มองไม่เห็นปกเลย
-                ของใหม่ 0.85 × 0.30 × 0.55 ≈ 0.14 — ยังเห็นภาพแต่ตัวหนังสือขาวยังอ่านออก */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+                รอบแรก 0.5 × 0 × 0 = ดำสนิท มองไม่เห็นปกเลย
+                รอบสอง 0.85 × 0.30 × 0.55 ≈ 0.14 — สว่างไป
+                ตอนนี้ 0.80 × 0.25 × 0.50 = 0.10 */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
             <div className="relative z-10 flex min-h-[330px] flex-col justify-end p-5 sm:min-h-[360px] sm:p-8">
               <div className="max-w-[min(100%,520px)] [text-shadow:0_1px_4px_rgb(0_0_0/0.85)]">
