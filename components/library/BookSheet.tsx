@@ -39,10 +39,17 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
   const cover = book.coverFileId ? `/api/drive/file/${book.coverFileId}` : null;
   const pct = Math.min(100, Math.round(book.percent ?? 0));
 
+  /* opf บางเล่มใส่วันที่ค่าเริ่มต้นมาเป็น 0101-01-01 แล้วหน้าจอขึ้น "ปีที่พิมพ์ 0101"
+     ซึ่งไม่ใช่ข้อมูล เป็นขยะ — ตัดปีที่อยู่นอกช่วงที่เป็นไปได้ทิ้ง */
+  const year = (() => {
+    const y = Number(book.publishedDate?.slice(0, 4));
+    return y >= 1400 && y <= new Date().getFullYear() + 1 ? String(y) : undefined;
+  })();
+
   // แถวข้อมูลสั้น ๆ คั่นด้วยจุดใต้ชื่อเรื่อง เอาเฉพาะที่มีค่าจริง
   const chips = [
     book.series ? `เล่ม ${book.series.index}` : null,
-    book.publishedDate?.slice(0, 4),
+    year,
     book.language?.toUpperCase(),
     book.publisher,
   ].filter(Boolean) as string[];
@@ -75,7 +82,7 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
     ['ผู้เขียน', book.authors.join(', ') || undefined],
     ['ชุดหนังสือ', book.series ? `${book.series.name} เล่ม ${book.series.index}` : undefined],
     ['สำนักพิมพ์', book.publisher],
-    ['ปีที่พิมพ์', book.publishedDate?.slice(0, 4)],
+    ['ปีที่พิมพ์', year],
     ['ภาษา', book.language],
     ['ISBN', book.isbn],
   ];
@@ -123,21 +130,26 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
                 src={cover}
                 alt=""
                 aria-hidden
-                className="absolute inset-0 h-full w-full object-cover object-center brightness-[0.8]"
+                className="absolute inset-0 h-full w-full object-cover object-center brightness-[0.7]"
               />
             )}
 
             {/* ผ้าคลุมสองทิศ — ซ้ายไปขวากันตัวหนังสือจมภาพ ล่างขึ้นบนกันปุ่มจมภาพ
                 ถ้าใช้ทิศเดียวจะมีปกบางเล่มที่สว่างจัดตรงมุมแล้วอ่านไม่ออก
 
-                ค่าความทึบต้องคิดแบบคูณกัน ไม่ใช่บวก เพราะสองชั้นนี้ทับกัน
-                ที่มุมซ้ายล่างซึ่งเป็นที่อยู่ของข้อความ ความสว่างที่เหลือ =
-                brightness × (1 - ทึบซ้าย) × (1 - ทึบล่าง)
-                รอบแรก 0.5 × 0 × 0 = ดำสนิท มองไม่เห็นปกเลย
-                รอบสอง 0.85 × 0.30 × 0.55 ≈ 0.14 — สว่างไป
-                ตอนนี้ 0.80 × 0.25 × 0.50 = 0.10 */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                ต้องคลุม *ด้านบน* ด้วย ไม่ใช่แค่ซ้ายกับล่าง — ปกหนังสือมีชื่อเรื่อง
+                พิมพ์อยู่บนภาพอยู่แล้ว พอไม่คลุมบนมันจะโผล่ขึ้นมาแย่งกับชื่อเรื่องของเรา
+                (เห็นชัดมากตอนเปิดดูจริงบนเล่ม A Feast for Crows)
+                ชั้นแนวตั้งจึงเข้มทั้งหัวและท้าย ปล่อยโปร่งตรงกลางที่เป็นตัวภาพ
+
+                ความทึบทับกันแบบคูณ ไม่ใช่บวก ความสว่างที่เหลือ =
+                brightness × (1-ทึบเรียบ) × (1-ทึบแนวนอน) × (1-ทึบแนวตั้ง)
+                  มุมซ้ายล่าง (ที่อยู่ข้อความ) 0.7 × .85 × .30 × .35 ≈ 0.06
+                  ขวากลาง (ตัวภาพ)            0.7 × .85 × .80 × 1.0 ≈ 0.48
+                  ขวาบน                       0.7 × .85 × .80 × .45 ≈ 0.21 */}
+            <div className="absolute inset-0 bg-black/15" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/55" />
 
             <div className="relative z-10 flex min-h-[330px] flex-col justify-end p-5 sm:min-h-[360px] sm:p-8">
               <div className="max-w-[min(100%,520px)] [text-shadow:0_1px_4px_rgb(0_0_0/0.85)]">
