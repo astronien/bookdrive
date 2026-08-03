@@ -1,5 +1,9 @@
 'use client';
 
+/* ปกมาจาก /api/drive/file/{id} ซึ่ง next/image optimize ไม่ได้อยู่แล้ว (ต้องมี token)
+   ปิดกฎทั้งไฟล์ตรงนี้ เพราะคอมเมนต์ต่อบรรทัดใช้ไม่ได้ใน JSX children */
+/* eslint-disable @next/next/no-img-element */
+
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
@@ -17,6 +21,9 @@ import { pickFile } from '@/lib/types';
  *
  * ทั้งสองแบบใช้ DOM ชุดเดียวกัน ต่างกันแค่ Tailwind breakpoint — ไม่มี branch ใน JS
  * จึงไม่มีปัญหา hydration mismatch แบบที่เกิดถ้าเช็ค window.innerWidth ตอน render
+ *
+ * ส่วนหัวทำเป็น hero มืดแบบหน้าแนะนำของ Netflix: ปกเป็นภาพพื้นเต็มกรอบ
+ * ข้อความขาวชิดซ้าย ปุ่มเป็นแคปซูล — ไม่ใช่ปกจาง ๆ บนพื้นขาวแบบเดิม
  */
 export default function BookSheet({ book, onClose }: { book: Book; onClose: () => void }) {
   const router = useRouter();
@@ -27,13 +34,22 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const formats = useMemo(
-    () => [...new Set(book.files.map((f) => f.format))],
-    [book.files]
-  );
+  const formats = useMemo(() => [...new Set(book.files.map((f) => f.format))], [book.files]);
   const active = pickFile(book)?.format;
   const cover = book.coverFileId ? `/api/drive/file/${book.coverFileId}` : null;
   const pct = Math.min(100, Math.round(book.percent ?? 0));
+
+  // แถวข้อมูลสั้น ๆ คั่นด้วยจุดใต้ชื่อเรื่อง เอาเฉพาะที่มีค่าจริง
+  const chips = [
+    book.series ? `เล่ม ${book.series.index}` : null,
+    book.publishedDate?.slice(0, 4),
+    book.language?.toUpperCase(),
+    book.publisher,
+  ].filter(Boolean) as string[];
+
+  const plain = book.description
+    ? book.description.replace(/<[^>]*>/g, ' ').replace(/\s{2,}/g, ' ').trim()
+    : '';
 
   // Esc ปิด และล็อกไม่ให้หน้าข้างหลังเลื่อนตาม — บนมือถือถ้าไม่ล็อก
   // การปัดใน sheet จะไปเลื่อนไลบรารีข้างหลังแทน
@@ -76,178 +92,198 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
       aria-modal="true"
       aria-label={book.title}
     >
-      {/* ฉากหลัง — คลิกที่ว่างเพื่อปิด เป็นพฤติกรรมที่คนคาดหวังจาก modal */}
       <button
         aria-label="ปิด"
         onClick={onClose}
-        className="absolute inset-0 cursor-default bg-navy/45 backdrop-blur-[2px]"
+        className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-[3px]"
       />
 
       <div
         className="relative flex w-full flex-col overflow-hidden bg-white shadow-2xl
-                   sm:max-h-[86vh] sm:w-[min(760px,100%)] sm:rounded-2xl"
+                   sm:max-h-[88vh] sm:w-[min(820px,100%)] sm:rounded-2xl"
       >
-        {/* ---------- ปกจาง ๆ เป็นพื้นหลังส่วนหัว ----------
-            ไล่เฉดลงไปหาขาวด้านล่าง ไม่งั้นขอบภาพจะตัดเป็นเส้นตรงดูแข็ง
-
-            brightness-125 สำคัญกว่าที่คิด — ปกเล่มที่พื้นดำจะทำให้แถบนี้มืด
-            จนตัวหนังสือสีเข้มอ่านไม่ออก ดันความสว่างขึ้นแล้วเร่ง saturate แทน
-            จะได้ "คราบสีของปก" ไม่ใช่ "รูปปกมืด ๆ" ที่บังข้อความ */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[340px] overflow-hidden">
-          {cover && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={cover}
-              alt=""
-              aria-hidden
-              className="h-full w-full scale-125 object-cover opacity-45 blur-3xl saturate-[1.8] brightness-125"
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-white/60 to-white" />
-        </div>
-
         <button
           onClick={onClose}
           aria-label="ปิด"
-          className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full
-                     bg-white/80 text-ink shadow-sm backdrop-blur transition hover:bg-white"
+          className="absolute right-3 top-3 z-30 grid h-9 w-9 place-items-center rounded-full
+                     bg-black/45 text-white backdrop-blur transition hover:bg-black/70"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
             <path d="M18 6 6 18M6 6l12 12" />
           </svg>
         </button>
 
-        <div className="relative overflow-y-auto overscroll-contain px-5 pb-6 pt-6 sm:px-7 sm:pt-7">
-          <div className="flex gap-4 sm:gap-6">
-            {/* ปกจริง ขนาดเล็กลงบนมือถือเพื่อไม่ให้ดันเนื้อหาตกจอ */}
-            <div className="w-[104px] shrink-0 sm:w-[150px]">
-              <div className="aspect-[2/3] overflow-hidden rounded-lg bg-shell shadow-lg ring-1 ring-black/5">
-                {cover ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={cover} alt={book.title} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="grid h-full place-items-center p-2 text-center text-[11px] font-semibold text-muted">
-                    {book.title}
+        <div className="overflow-y-auto overscroll-contain">
+          {/* ---------- hero ----------
+              ปกหนังสือเป็นแนวตั้ง 2:3 พอยัดลงกรอบกว้างจะถูก crop เหลือแถบกลาง
+              จึงซ้อนสองชั้น: ชั้นล่างเบลอแรงไว้ถมขอบ ชั้นบนเป็นปกคมชิดขวา
+              เลียนองค์ประกอบของภาพต้นแบบที่ตัวละครอยู่ขวา ข้อความอยู่ซ้าย */}
+          <div className="relative isolate min-h-[330px] bg-[#0b0d14] sm:min-h-[360px]">
+            {cover && (
+              <>
+                <img
+                  src={cover}
+                  alt=""
+                  aria-hidden
+                  className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl brightness-[0.55] saturate-150"
+                />
+                <img
+                  src={cover}
+                  alt={book.title}
+                  className="absolute right-0 top-0 hidden h-full w-[46%] object-cover object-center sm:block"
+                />
+              </>
+            )}
+
+            {/* ผ้าคลุมสองทิศ — ซ้ายไปขวากันตัวหนังสือจมภาพ ล่างขึ้นบนกันปุ่มจมภาพ
+                ถ้าใช้ทิศเดียวจะมีปกบางเล่มที่สว่างจัดตรงมุมแล้วอ่านไม่ออก */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0b0d14] via-[#0b0d14]/85 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0b0d14] via-[#0b0d14]/35 to-transparent" />
+
+            <div className="relative z-10 flex min-h-[330px] flex-col justify-end p-5 sm:min-h-[360px] sm:p-8">
+              <div className="max-w-[min(100%,460px)]">
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {formats.map((f) => <FormatTag key={f} format={f} />)}
+                </div>
+
+                <h2 className="text-[24px] font-extrabold leading-tight text-white drop-shadow-lg sm:text-[30px]">
+                  {book.title}
+                </h2>
+
+                {book.authors.length > 0 && (
+                  <div className="mt-1.5 text-[13.5px] font-semibold text-white/80">
+                    {book.authors.join(', ')}
                   </div>
                 )}
-              </div>
-            </div>
 
-            <div className="min-w-0 flex-1">
-              <h2 className="text-[19px] font-extrabold leading-snug sm:text-[23px]">{book.title}</h2>
-              {book.authors.length > 0 && (
-                <div className="mt-1 text-[13px] text-muted">{book.authors.join(', ')}</div>
-              )}
-
-              {book.series && (
-                <Link
-                  href={`/series/${encodeURIComponent(book.series.name)}`}
-                  onClick={onClose}
-                  className="mt-2 inline-block text-[12.5px] font-semibold text-brand hover:underline"
-                >
-                  {book.series.name} · เล่ม {book.series.index} →
-                </Link>
-              )}
-
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                {formats.map((f) => <FormatTag key={f} format={f} />)}
-              </div>
-
-              {pct > 0 && (
-                <div className="mt-4">
-                  <div className="mb-1 flex justify-between text-[11.5px] font-semibold text-muted">
-                    <span>อ่านไปแล้ว</span><span>{pct}%</span>
+                {chips.length > 0 && (
+                  <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-semibold text-white/60">
+                    {chips.map((c, i) => (
+                      <span key={c + i} className="flex items-center gap-2">
+                        {i > 0 && <span className="text-white/30">•</span>}
+                        {c}
+                      </span>
+                    ))}
                   </div>
-                  <div className="h-[5px] w-full rounded-full bg-line">
-                    <div className="h-full rounded-full bg-amber" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+                )}
 
-          {/* ---------- เลือกฟอร์แมต ----------
-              โผล่เฉพาะตอนมีให้เลือกจริง เล่มที่มีไฟล์เดียวเห็นปุ่มเดียวก็สับสนเปล่า ๆ */}
-          {formats.length > 1 && (
-            <div className="mt-6">
-              <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-muted">
-                เปิดด้วยฟอร์แมต
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {formats.map((f) => (
+                {plain && (
+                  <p className="mt-3 line-clamp-3 text-[13px] leading-relaxed text-white/75">{plain}</p>
+                )}
+
+                {pct > 0 && (
+                  <div className="mt-4 max-w-[300px]">
+                    <div className="mb-1 flex justify-between text-[11px] font-semibold text-white/70">
+                      <span>อ่านไปแล้ว</span><span>{pct}%</span>
+                    </div>
+                    <div className="h-[4px] w-full rounded-full bg-white/25">
+                      <div className="h-full rounded-full bg-amber" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* ปุ่มแคปซูล ขาวทึบ = ปุ่มหลัก / เทาโปร่ง = ปุ่มรอง ตามภาพต้นแบบ */}
+                <div className="mt-5 flex flex-wrap items-center gap-2.5">
                   <button
-                    key={f}
-                    onClick={() => setPreferredFormat(book.id, f as BookFormat)}
-                    className={`h-9 rounded-[10px] border px-3.5 text-[12.5px] font-bold uppercase transition ${
-                      f === active
-                        ? 'border-brand bg-brand text-white'
-                        : 'border-line bg-white hover:bg-shell'
-                    }`}
+                    onClick={() => router.push(`/read/${book.id}`)}
+                    className="inline-flex h-[44px] items-center gap-2 rounded-full bg-white px-6
+                               text-[14px] font-bold text-[#0b0d14] shadow-lg transition hover:bg-white/85"
                   >
-                    {f}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                      <path d="M6 4.5v15l13-7.5z" />
+                    </svg>
+                    {pct > 0 ? `อ่านต่อ · ${pct}%` : 'เริ่มอ่าน'}
                   </button>
-                ))}
+
+                  <OfflineButton
+                    book={book}
+                    className="!h-[44px] !rounded-full !border-0 !bg-white/20 !px-5 !text-white
+                               backdrop-blur transition hover:!bg-white/30"
+                  />
+
+                  {pct > 0 && (
+                    <button
+                      onClick={reset}
+                      disabled={busy}
+                      className="h-[44px] rounded-full bg-white/10 px-4 text-[13px] font-semibold
+                                 text-white/80 backdrop-blur transition hover:bg-white/20 disabled:opacity-50"
+                    >
+                      รีเซ็ต
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          )}
 
-          {/* ---------- ปุ่มหลัก ----------
-              บนมือถือปักไว้ล่างสุดแบบ sticky เพราะเรื่องย่อยาว ๆ จะดันปุ่มตกจอไป */}
-          {/* ปุ่มหลัก: เขียว = อ่านต่อ / น้ำเงิน = เริ่มใหม่ ให้ตรงกับแถว "อ่านต่อ" ที่ใช้ text-mint */}
-          <div className="sticky bottom-0 z-10 -mx-5 mt-6 flex flex-wrap gap-2 border-t border-line
-                          bg-white/95 px-5 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
-            <button
-              onClick={() => router.push(`/read/${book.id}`)}
-              className={`h-[42px] flex-1 rounded-[10px] px-6 text-[13.5px] font-bold text-white
-                          transition hover:brightness-110 sm:flex-none ${pct > 0 ? 'bg-mint' : 'bg-brand'}`}
-            >
-              {pct > 0 ? `อ่านต่อ · ${pct}%` : 'เริ่มอ่าน'}
-            </button>
-            <OfflineButton book={book} className="h-[42px]" />
-            {pct > 0 && (
-              <button
-                onClick={reset}
-                disabled={busy}
-                className="h-[42px] rounded-[10px] border border-line px-4 text-[13px] font-semibold
-                           text-muted transition hover:bg-shell disabled:opacity-50"
+            {book.series && (
+              <Link
+                href={`/series/${encodeURIComponent(book.series.name)}`}
+                onClick={onClose}
+                className="absolute bottom-5 right-5 z-20 hidden max-w-[240px] truncate rounded-full
+                           bg-black/55 px-3.5 py-2 text-[12px] font-semibold text-white/90
+                           backdrop-blur transition hover:bg-black/80 sm:block"
               >
-                รีเซ็ต
-              </button>
+                📚 {book.series.name} →
+              </Link>
             )}
           </div>
 
-          {book.description && (
-            <div className="mt-6">
-              <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-muted">เรื่องย่อ</div>
-              {/* metadata.opf ของ Calibre ใส่ HTML มาด้วย (<p>, <br>) แต่มาจากไฟล์ของผู้ใช้เอง
-                  จึงล้าง tag ทิ้งแล้วแสดงเป็นข้อความล้วน ปลอดภัยกว่า dangerouslySetInnerHTML */}
-              <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-ink/85">
-                {book.description.replace(/<[^>]*>/g, ' ').replace(/\s{2,}/g, ' ').trim()}
-              </p>
-            </div>
-          )}
-
-          <div className="mt-6 grid gap-x-6 gap-y-2 sm:grid-cols-2">
-            {meta.filter(([, v]) => v).map(([k, v]) => (
-              <div key={k} className="flex gap-2 border-b border-line/70 py-1.5 text-[12.5px]">
-                <span className="w-[74px] shrink-0 text-muted">{k}</span>
-                <span className="min-w-0 flex-1 break-words font-medium">{v}</span>
+          {/* ---------- เนื้อหาส่วนล่าง พื้นขาวตามธีมเดิมของแอป ---------- */}
+          <div className="px-5 pb-7 pt-6 sm:px-8">
+            {formats.length > 1 && (
+              <div className="mb-6">
+                <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-muted">
+                  เปิดด้วยฟอร์แมต
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formats.map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setPreferredFormat(book.id, f as BookFormat)}
+                      className={`h-9 rounded-[10px] border px-3.5 text-[12.5px] font-bold uppercase transition ${
+                        f === active
+                          ? 'border-brand bg-brand text-white'
+                          : 'border-line bg-white hover:bg-shell'
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
+            )}
 
-          {book.tags.length > 0 && (
-            <div className="mt-5 flex flex-wrap gap-1.5">
-              {book.tags.map((t) => (
-                <span key={t} className="rounded-full bg-shell px-2.5 py-1 text-[11.5px] text-muted">
-                  {t}
-                </span>
+            {plain && (
+              <div className="mb-6">
+                <div className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-muted">เรื่องย่อ</div>
+                {/* metadata.opf ของ Calibre ใส่ HTML มาด้วย (<p>, <br>) แต่มาจากไฟล์ของผู้ใช้เอง
+                    จึงล้าง tag ทิ้งแล้วแสดงเป็นข้อความล้วน ปลอดภัยกว่า dangerouslySetInnerHTML */}
+                <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-ink/85">{plain}</p>
+              </div>
+            )}
+
+            <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+              {meta.filter(([, v]) => v).map(([k, v]) => (
+                <div key={k} className="flex gap-2 border-b border-line/70 py-1.5 text-[12.5px]">
+                  <span className="w-[74px] shrink-0 text-muted">{k}</span>
+                  <span className="min-w-0 flex-1 break-words font-medium">{v}</span>
+                </div>
               ))}
             </div>
-          )}
 
-          <div className="mt-5 text-[11px] text-muted/80">
-            {book.files.map((f) => `${f.format.toUpperCase()} · ${(f.size / 1048576).toFixed(1)} MB`).join('   ')}
+            {book.tags.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-1.5">
+                {book.tags.map((t) => (
+                  <span key={t} className="rounded-full bg-shell px-2.5 py-1 text-[11.5px] text-muted">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-5 text-[11px] text-muted/80">
+              {book.files.map((f) => `${f.format.toUpperCase()} · ${(f.size / 1048576).toFixed(1)} MB`).join('   ')}
+            </div>
           </div>
         </div>
       </div>
