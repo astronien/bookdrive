@@ -3,7 +3,8 @@
 import { create } from 'zustand';
 import { db } from '@/lib/db/idb';
 import { queue } from '@/lib/sync/engine';
-import { parseOpf, calibreIdFromFolder, titleFromFolder } from '@/lib/parse/opf';
+import { parseOpf, calibreIdFromFolder, titleFromFolder, type OpfMeta } from '@/lib/parse/opf';
+import { extractMetaFromEpub } from '@/lib/parse/epub';
 import {
   FORMAT_RANK,
   type Book,
@@ -72,7 +73,7 @@ export interface Filters {
 }
 
 export interface ScanProgress {
-  phase: 'idle' | 'listing' | 'metadata' | 'saving';
+  phase: 'idle' | 'listing' | 'metadata' | 'epub' | 'saving';
   done: number;
   total: number;
 }
@@ -195,53 +196,106 @@ export const useLibrary = create<State>((set, get) => ({
     set({ scan: { phase: 'metadata', done: 0, total: todo.length } });
 
     const now = new Date().toISOString();
-    const built = await pool(
-      todo,
-      8, // อ่าน opf ทีละ 8 ไฟล์ — เร็วพอโดยไม่ชน rate limit ของ Drive
-      async (f): Promise<Book> => {
-        let meta: ReturnType<typeof parseOpf> | null = null;
-        if (f.opfFileId) {
-          try {
-            const r = await fetch(`/api/drive/file/${f.opfFileId}`);
-            if (r.ok) meta = parseOpf(await r.text());
-          } catch {
-            /* opf พังหรือโหลดไม่ได้ — ถอยไปใช้ชื่อโฟลเดอร์แทน */
-          }
+
+    // แยกสองกลุ่ม: มี metadata.opf (เบา) กับไม่มี (ต้องแกะจากไฟล์ EPUB ซึ่งหนักกว่ามาก)
+    const withOpf = todo.filter((f) => f.opfFileId);
+    const withoutOpf = todo.filter((f) => !f.opfFileId);
+
+    const build = async (
+      f: (typeof todo)[number],
+      meta: OpfMeta | null,
+      source: 'opf' | 'epub' | 'folder'
+    ): Promise<Book> => {
+      const files = [...f.files].sort((a, b) => FORMAT_RANK[a.format] - FORMAT_RANK[b.format]);
+      const prev = known.get(f.folderId);
+
+      return {
+        metaSource: source,
+        // เก็บสิ่งที่เป็นของผู้ใช้ไว้เสมอตอน refresh — id ผูกกับ progress/ไฮไลต์
+        id: prev?.id ?? crypto.randomUUID(),
+        addedAt: prev?.addedAt ?? now,
+        lastOpenedAt: prev?.lastOpenedAt,
+        status: prev?.status ?? 'unread',
+        percent: prev?.percent ?? 0,
+        preferredFormat: prev?.preferredFormat,
+        shelfIds: prev?.shelfIds ?? [],
+
+        source: 'calibre',
+        folderId: f.folderId,
+        calibreId: meta?.calibreId ?? calibreIdFromFolder(f.folderName),
+        files,
+        coverFileId: f.coverFileId,
+
+        title: meta?.title || titleFromFolder(f.folderName),
+        authors: meta?.authors?.length ? meta.authors : f.authorFolderName ? [f.authorFolderName] : [],
+        series: meta?.series,
+        publisher: meta?.publisher,
+        publishedDate: meta?.publishedDate,
+        language: meta?.language,
+        isbn: meta?.isbn,
+        description: meta?.description,
+        rating: meta?.rating,
+        tags: meta?.tags ?? [],
+      };
+    };
+
+    const built: Book[] = [];
+
+    // 1) เล่มที่มี metadata.opf — โหลดไฟล์เล็ก ทำได้ทีละ 8
+    set({ scan: { phase: 'metadata', done: 0, total: withOpf.length } });
+    built.push(...await pool(withOpf, 8, async (f) => {
+      let meta: OpfMeta | null = null;
+      try {
+        const r = await fetch(`/api/drive/file/${f.opfFileId}`);
+        if (r.ok) meta = parseOpf(await r.text());
+      } catch {
+        /* opf พังหรือโหลดไม่ได้ */
+      }
+      return build(f, meta, meta ? 'opf' : 'folder');
+    }, (done, total) => set({ scan: { phase: 'metadata', done, total } })));
+
+    // 2) เล่มที่ไม่มี metadata.opf — แกะจากไฟล์ EPUB
+    //    ต้องโหลดทั้งเล่ม (หลาย MB) จึงลดเหลือทีละ 3 และข้ามเล่มที่เคยแกะแล้วและไฟล์ไม่เปลี่ยน
+    if (withoutOpf.length) {
+      set({ scan: { phase: 'epub', done: 0, total: withoutOpf.length } });
+      built.push(...await pool(withoutOpf, 3, async (f) => {
+        const prev = known.get(f.folderId);
+        const epub = f.files.find((x) => x.format === 'epub');
+        const unchanged =
+          prev?.metaSource === 'epub' &&
+          epub &&
+          prev.files.some((x) => x.driveFileId === epub.driveFileId && x.modifiedTime === epub.modifiedTime);
+
+        if (unchanged && prev) {
+          // ไฟล์ไม่ขยับตั้งแต่ครั้งก่อน ไม่ต้องโหลดใหม่ให้เสียเวลาและโควตา
+          const cached: OpfMeta = {
+            title: prev.title,
+            authors: prev.authors,
+            series: prev.series,
+            publisher: prev.publisher,
+            publishedDate: prev.publishedDate,
+            language: prev.language,
+            isbn: prev.isbn,
+            description: prev.description,
+            rating: prev.rating,
+            tags: prev.tags,
+            calibreId: prev.calibreId,
+          };
+          return build(f, cached, 'epub');
         }
 
-        const files = [...f.files].sort((a, b) => FORMAT_RANK[a.format] - FORMAT_RANK[b.format]);
-        const prev = known.get(f.folderId);
-
-        return {
-          // เก็บสิ่งที่เป็นของผู้ใช้ไว้เสมอตอน refresh — id ผูกกับ progress/ไฮไลต์
-          id: prev?.id ?? crypto.randomUUID(),
-          addedAt: prev?.addedAt ?? now,
-          lastOpenedAt: prev?.lastOpenedAt,
-          status: prev?.status ?? 'unread',
-          percent: prev?.percent ?? 0,
-          preferredFormat: prev?.preferredFormat,
-          shelfIds: prev?.shelfIds ?? [],
-
-          source: 'calibre',
-          folderId: f.folderId,
-          calibreId: meta?.calibreId ?? calibreIdFromFolder(f.folderName),
-          files,
-          coverFileId: f.coverFileId,
-
-          title: meta?.title || titleFromFolder(f.folderName),
-          authors: meta?.authors?.length ? meta.authors : f.authorFolderName ? [f.authorFolderName] : [],
-          series: meta?.series,
-          publisher: meta?.publisher,
-          publishedDate: meta?.publishedDate,
-          language: meta?.language,
-          isbn: meta?.isbn,
-          description: meta?.description,
-          rating: meta?.rating,
-          tags: meta?.tags ?? [],
-        };
-      },
-      (done, total) => set({ scan: { phase: 'metadata', done, total } })
-    );
+        let meta: OpfMeta | null = null;
+        if (epub) {
+          try {
+            const r = await fetch(`/api/drive/file/${epub.driveFileId}`);
+            if (r.ok) meta = await extractMetaFromEpub(await r.blob());
+          } catch {
+            /* ไฟล์เสียหรือโหลดไม่ได้ — ถอยไปใช้ชื่อโฟลเดอร์ */
+          }
+        }
+        return build(f, meta, meta ? 'epub' : 'folder');
+      }, (done, total) => set({ scan: { phase: 'epub', done, total } })));
+    }
 
     if (!built.length) {
       set({ scan: { phase: 'idle', done: 0, total: 0 } });

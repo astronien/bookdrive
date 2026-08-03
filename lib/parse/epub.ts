@@ -1,6 +1,7 @@
 'use client';
 
 import JSZip from 'jszip';
+import { parseOpf, type OpfMeta } from './opf';
 
 export interface ParsedMeta {
   title?: string;
@@ -71,4 +72,30 @@ export async function makeThumbnail(blob: Blob, maxW = 400): Promise<Blob> {
   const canvas = new OffscreenCanvas(bmp.width * scale, bmp.height * scale);
   canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
   return canvas.convertToBlob({ type: 'image/jpeg', quality: 0.8 });
+}
+
+
+/**
+ * แกะ OPF ที่อยู่ *ข้างในไฟล์ EPUB* แล้วอ่านด้วย parser ตัวเดียวกับ metadata.opf ของ Calibre
+ *
+ * ใช้ตอนโฟลเดอร์หนังสือไม่มี metadata.opf (ในไลบรารีจริงเจอ 60 จาก 221 เล่ม)
+ * ซึ่งเดิมต้องถอยไปใช้ชื่อโฟลเดอร์ที่ Calibre ถอดเป็นอักษรโรมันไว้จนอ่านไม่ออก
+ * แต่ชื่อไทยจริงอยู่ใน EPUB มาตลอด
+ *
+ * แพงกว่าอ่าน metadata.opf มาก เพราะต้องโหลดไฟล์ทั้งเล่ม (หลาย MB) แทนที่จะโหลด
+ * ไม่กี่ KB จึงควรเรียกเฉพาะเล่มที่ไม่มีทางเลือกอื่นเท่านั้น
+ */
+export async function extractMetaFromEpub(blob: Blob): Promise<OpfMeta> {
+  const zip = await JSZip.loadAsync(blob);
+
+  const container = await zip.file('META-INF/container.xml')?.async('string');
+  if (!container) throw new Error('ไม่ใช่ไฟล์ EPUB ที่ถูกต้อง');
+
+  const opfPath = new DOMParser()
+    .parseFromString(container, 'application/xml')
+    .querySelector('rootfile')?.getAttribute('full-path');
+  if (!opfPath) throw new Error('หา OPF ใน EPUB ไม่เจอ');
+
+  const xml = await zip.file(opfPath)!.async('string');
+  return parseOpf(xml);
 }
