@@ -115,24 +115,16 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
 
         <div className="overflow-y-auto overscroll-contain">
           {/* ---------- hero ----------
-              ปกหนังสือเป็นแนวตั้ง 2:3 พอยัดลงกรอบกว้างจะถูก crop เหลือแถบกลาง
-              จึงซ้อนสองชั้น: ชั้นล่างเบลอแรงไว้ถมขอบ ชั้นบนเป็นปกคมชิดขวา
-              เลียนองค์ประกอบของภาพต้นแบบที่ตัวละครอยู่ขวา ข้อความอยู่ซ้าย */}
+              ปก 2:3 ยัดลงกรอบกว้างแล้วโดน crop เหลือแถบกลาง — เอาแบบนั้นตามที่สั่ง
+              ตัวปกเต็ม ๆ ไปอยู่เป็นรูปเล็กเหนือชื่อเรื่องแทน จะได้ยังเห็นทั้งใบ */}
           <div className="relative isolate min-h-[330px] bg-[#0b0d14] sm:min-h-[360px]">
             {cover && (
-              <>
-                <img
-                  src={cover}
-                  alt=""
-                  aria-hidden
-                  className="absolute inset-0 h-full w-full scale-110 object-cover blur-2xl brightness-[0.55] saturate-150"
-                />
-                <img
-                  src={cover}
-                  alt={book.title}
-                  className="absolute right-0 top-0 hidden h-full w-[46%] object-cover object-center sm:block"
-                />
-              </>
+              <img
+                src={cover}
+                alt=""
+                aria-hidden
+                className="absolute inset-0 h-full w-full object-cover object-center brightness-[0.5]"
+              />
             )}
 
             {/* ผ้าคลุมสองทิศ — ซ้ายไปขวากันตัวหนังสือจมภาพ ล่างขึ้นบนกันปุ่มจมภาพ
@@ -141,9 +133,22 @@ export default function BookSheet({ book, onClose }: { book: Book; onClose: () =
             <div className="absolute inset-0 bg-gradient-to-t from-[#0b0d14] via-[#0b0d14]/35 to-transparent" />
 
             <div className="relative z-10 flex min-h-[330px] flex-col justify-end p-5 sm:min-h-[360px] sm:p-8">
-              <div className="max-w-[min(100%,460px)]">
-                <div className="mb-2 flex flex-wrap gap-1.5">
-                  {formats.map((f) => <FormatTag key={f} format={f} />)}
+              <div className="max-w-[min(100%,520px)]">
+                {/* ปกใบเล็กเหนือชื่อเรื่อง — ภาพพื้นหลังโดน crop จนดูไม่ออกว่าปกหน้าตายังไง
+                    ใบนี้เลยเป็นตัวที่ให้เห็นทั้งใบจริง ๆ จงใจทำเล็กไม่ให้แย่งที่ชื่อเรื่อง */}
+                <div className="mb-3 flex items-end gap-3">
+                  {cover && (
+                    <img
+                      src={cover}
+                      alt={book.title}
+                      className="w-[52px] shrink-0 rounded-md object-cover shadow-xl
+                                 ring-1 ring-white/25 sm:w-[62px]"
+                      style={{ aspectRatio: '2 / 3' }}
+                    />
+                  )}
+                  <div className="flex flex-wrap gap-1.5 pb-0.5">
+                    {formats.map((f) => <FormatTag key={f} format={f} />)}
+                  </div>
                 </div>
 
                 <h2 className="text-[24px] font-extrabold leading-tight text-white drop-shadow-lg sm:text-[30px]">
