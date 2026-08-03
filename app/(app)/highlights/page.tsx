@@ -105,7 +105,7 @@ export default function HighlightsPage() {
           <button
             onClick={() => setColor('all')}
             className={`h-8 rounded-full border px-3.5 text-[12.5px] font-medium transition ${
-              color === 'all' ? 'border-navy bg-navy text-white' : 'border-line bg-white text-muted hover:text-ink'
+              color === 'all' ? 'border-brand bg-brand text-white' : 'border-line bg-white text-muted hover:text-ink'
             }`}
           >
             ทั้งหมด
@@ -115,7 +115,7 @@ export default function HighlightsPage() {
               key={c}
               onClick={() => setColor(c)}
               className={`flex h-8 items-center gap-1.5 rounded-full border px-3.5 text-[12.5px] font-medium transition ${
-                color === c ? 'border-navy bg-navy text-white' : 'border-line bg-white text-muted hover:text-ink'
+                color === c ? 'border-brand bg-brand text-white' : 'border-line bg-white text-muted hover:text-ink'
               }`}
             >
               <span className="h-[9px] w-[9px] rounded-sm" style={{ background: COLORS[c] }} />
@@ -125,7 +125,7 @@ export default function HighlightsPage() {
           <button
             onClick={() => setNotesOnly((v) => !v)}
             className={`h-8 rounded-full border px-3.5 text-[12.5px] font-medium transition ${
-              notesOnly ? 'border-navy bg-navy text-white' : 'border-line bg-white text-muted hover:text-ink'
+              notesOnly ? 'border-brand bg-brand text-white' : 'border-line bg-white text-muted hover:text-ink'
             }`}
           >
             มีโน้ตเท่านั้น

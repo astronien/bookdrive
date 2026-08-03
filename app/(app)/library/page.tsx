@@ -7,6 +7,7 @@ import { installFlushOnHide } from '@/lib/sync/engine';
 import FolderPicker from '@/components/library/FolderPicker';
 import BookCard from '@/components/library/BookCard';
 import SeriesCard from '@/components/library/SeriesCard';
+import ContinueRow from '@/components/library/ContinueRow';
 import type { BookFormat } from '@/lib/types';
 
 const FORMATS: ('all' | BookFormat)[] = ['all', 'epub', 'pdf', 'cbz'];
@@ -86,6 +87,11 @@ function LibraryInner() {
   }
 
   const list = filtered();
+  // เล่มที่ค้างไว้ เรียงตามที่เพิ่งเปิดล่าสุด
+  const continueList = books
+    .filter((b) => (b.percent ?? 0) > 0 && (b.percent ?? 0) < 95)
+    .sort((a, b) => (b.lastOpenedAt ?? '').localeCompare(a.lastOpenedAt ?? ''))
+    .slice(0, 12);
   const entries = grouped();
   const { authors, tags } = facets();
   const seriesCount = entries.filter((e) => e.kind === 'series').length;
@@ -107,7 +113,7 @@ function LibraryInner() {
           value={filters.query}
           onChange={(e) => setFilter({ query: e.target.value })}
           placeholder="ค้นหาชื่อเรื่อง ผู้เขียน ชุดหนังสือ หรือแท็ก…"
-          className="h-[38px] w-full rounded-[10px] border border-line bg-shell px-3.5 text-[16px] outline-none focus:border-accent focus:bg-white md:max-w-[420px] md:text-[13.5px]"
+          className="h-[40px] w-full rounded-full border border-line bg-shell px-4 text-[16px] outline-none focus:border-brand focus:bg-white md:max-w-[380px] md:text-[13.5px]"
         />
         <div className="hidden md:block md:flex-1" />
         {/* บนจอเล็กปุ่มเลื่อนแนวนอนแทนที่จะบีบให้เล็กจนกดยาก */}
@@ -116,26 +122,31 @@ function LibraryInner() {
             <>
               <button onClick={() => runScan(true)} disabled={busy}
                 title="อ่าน metadata.opf ใหม่ทุกเล่ม"
-                className="h-[38px] shrink-0 rounded-[10px] border border-line px-4 text-[13.5px] font-semibold transition hover:bg-shell disabled:opacity-50">
+                className="h-[38px] shrink-0 rounded-full border border-line bg-white px-4 text-[13.5px] font-semibold transition hover:bg-shell disabled:opacity-50">
                 อัปเดต metadata
               </button>
               <button onClick={() => runScan(false)} disabled={busy}
-                className="h-[38px] shrink-0 rounded-[10px] border border-line px-4 text-[13.5px] font-semibold transition hover:bg-shell disabled:opacity-50">
+                className="h-[38px] shrink-0 rounded-full border border-line bg-white px-4 text-[13.5px] font-semibold transition hover:bg-shell disabled:opacity-50">
                 {busy ? 'กำลังสแกน…' : 'สแกนไลบรารี'}
               </button>
             </>
           )}
           <button onClick={() => setPicking(true)}
-            className="h-[38px] shrink-0 rounded-[10px] bg-accent px-4 text-[13.5px] font-semibold text-[#08312e] transition hover:bg-accent-d">
+            className="h-[38px] shrink-0 rounded-full bg-brand px-5 text-[13.5px] font-semibold text-white shadow-sm transition hover:bg-brand-d">
             {calibreFolderId ? 'เปลี่ยนโฟลเดอร์' : 'เชื่อม Calibre library'}
           </button>
         </div>
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 pb-16 pt-5 md:px-[30px] md:pt-6">
-        <div className="mb-4">
+        {/* อ่านต่อมาก่อนทุกอย่าง — คนเปิดแอปมาเพื่ออ่านต่อ ไม่ใช่มาไล่ดูทั้งชั้น
+            ซ่อนเมื่อกำลังกรองอยู่ เพราะตอนนั้นผู้ใช้กำลังหาอย่างอื่น */}
+        {!active && <ContinueRow books={continueList} />}
+
+        <div className="mb-4 flex items-end gap-3">
+          <div className="min-w-0 flex-1">
           <h1 className="text-[21px] font-bold tracking-tight md:text-[25px]">
-            {STATUS.find((s) => s.key === filters.status)?.label ?? 'หนังสือทั้งหมด'}
+            {STATUS.find((s) => s.key === filters.status)?.label ?? 'ชั้นหนังสือของฉัน'}
           </h1>
           <p className="mt-1 text-[13px] text-muted">
             แสดง {list.length} จาก {books.length} เล่ม
@@ -143,6 +154,7 @@ function LibraryInner() {
             {offlineIds.size > 0 && <> · ออฟไลน์ {offlineIds.size} เล่ม</>}
             {calibreFolderName && <> · จาก <b className="text-ink">{calibreFolderName}</b></>}
           </p>
+          </div>
         </div>
 
         {msg && <div className="mb-4 rounded-[10px] border border-line bg-white px-4 py-3 text-[13px]">{msg}</div>}
@@ -195,7 +207,7 @@ function LibraryInner() {
               </button>
             )}
             <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}
-              className="h-8 rounded-full border border-line bg-white px-3 text-[12.5px] outline-none focus:border-accent">
+              className="h-8 rounded-full border border-line bg-white px-3 text-[12.5px] outline-none focus:border-brand">
               {SORTS.map((s) => <option key={s.key} value={s.key}>เรียงตาม{s.label}</option>)}
             </select>
           </div>
@@ -214,7 +226,7 @@ function LibraryInner() {
                 return (
                   <button key={name}
                     onClick={() => setFilter(browse === 'authors' ? { author: on ? null : name } : { tag: on ? null : name })}
-                    className={`rounded-full border px-3 py-1 text-[12px] transition ${on ? 'border-navy bg-navy text-white' : 'border-line hover:bg-shell'}`}>
+                    className={`rounded-full border px-3 py-1 text-[12px] transition ${on ? 'border-brand bg-brand text-white' : 'border-line hover:bg-shell'}`}>
                     {name} <span className="opacity-60">{n}</span>
                   </button>
                 );
@@ -264,7 +276,7 @@ function LibraryInner() {
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button onClick={onClick}
-      className={`h-8 shrink-0 whitespace-nowrap rounded-full border px-3.5 text-[12.5px] font-medium transition ${on ? 'border-navy bg-navy text-white' : 'border-line bg-white text-muted hover:text-ink'}`}>
+      className={`h-8 shrink-0 whitespace-nowrap rounded-full border px-3.5 text-[12.5px] font-medium transition ${on ? 'border-brand bg-brand text-white' : 'border-line bg-white text-muted hover:text-ink'}`}>
       {children}
     </button>
   );

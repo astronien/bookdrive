@@ -323,7 +323,7 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
                     <div className="flex gap-2">
                       {(['serif', 'sans', 'dyslexic'] as const).map((f) => (
                         <button key={f} onClick={() => update({ fontFamily: f })}
-                          className={`h-9 flex-1 rounded-lg border text-[12px] ${prefs.fontFamily === f ? 'border-navy bg-navy text-white' : 'border-line'}`}
+                          className={`h-9 flex-1 rounded-lg border text-[12px] ${prefs.fontFamily === f ? 'border-brand bg-brand text-white' : 'border-line'}`}
                           style={{ fontFamily: FONT_STACK[f] }}>
                           {f === 'serif' ? 'Serif' : f === 'sans' ? 'Sans' : 'Dyslexic'}
                         </button>
@@ -344,7 +344,7 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
                     <div className="flex gap-2">
                       {(['paginated', 'scrolled'] as const).map((f) => (
                         <button key={f} onClick={() => update({ flow: f })}
-                          className={`h-9 flex-1 rounded-lg border text-[12.5px] ${prefs.flow === f ? 'border-navy bg-navy text-white' : 'border-line'}`}>
+                          className={`h-9 flex-1 rounded-lg border text-[12.5px] ${prefs.flow === f ? 'border-brand bg-brand text-white' : 'border-line'}`}>
                           {f === 'paginated' ? 'พลิกหน้า' : 'เลื่อนยาว'}
                         </button>
                       ))}

@@ -64,11 +64,7 @@ export default function BookCard({
               )
             }
           >
-            {book.percent > 0 && (
-              <div className="absolute inset-x-0 bottom-0 h-[3px] bg-black/25">
-                <div className="h-full bg-accent" style={{ width: `${book.percent}%` }} />
-              </div>
-            )}
+
           </Book3D>
 
           {offline && (
@@ -94,22 +90,25 @@ export default function BookCard({
         </div>
       </TiltCard>
 
-      <div className="pt-2.5">
-        <div className="mb-1 flex flex-wrap gap-1">
-          {formats.map((f) => <FormatTag key={f} format={f} />)}
-        </div>
-        <div className="line-clamp-2 text-[12.8px] font-semibold leading-snug">{book.title}</div>
-        <div className="mt-0.5 truncate text-[11.2px] text-muted">{book.authors.join(', ') || '—'}</div>
+      {/* แถบความคืบหน้าอยู่ใต้ปก ไม่ใช่ทับบนปก — ตาเห็นเป็นเส้นเดียวเรียงกันทั้งชั้น
+          กวาดดูรอบเดียวรู้ทันทีว่าค้างเล่มไหนไว้บ้าง */}
+      <div className="mt-2.5 h-[3px] w-full rounded-full bg-line">
+        {book.percent > 0 && (
+          <div className="h-full rounded-full bg-amber" style={{ width: `${Math.min(100, book.percent)}%` }} />
+        )}
+      </div>
+
+      <div className="pt-2">
+        <div className="truncate text-[11.2px] text-muted">{book.authors.join(', ') || '—'}</div>
+        <div className="mt-0.5 line-clamp-2 text-[13px] font-semibold leading-snug">{book.title}</div>
         {book.series && (
           <div className="mt-0.5 truncate text-[10.5px] text-muted">
             {book.series.name} #{book.series.index}
           </div>
         )}
-        {book.percent > 0 && (
-          <div className="mt-0.5 text-[10.5px] font-semibold text-accent-d">
-            อ่านแล้ว {Math.round(book.percent)}%
-          </div>
-        )}
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {formats.map((f) => <FormatTag key={f} format={f} />)}
+        </div>
       </div>
     </Link>
   );

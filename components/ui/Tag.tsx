@@ -22,5 +22,5 @@ export function CountTag({ children }: { children: React.ReactNode }) {
 }
 
 export function DoneTag({ children }: { children: React.ReactNode }) {
-  return <span className={`${BASE} bg-accent text-[#08312e] normal-case`}>{children}</span>;
+  return <span className={`${BASE} bg-mint text-white normal-case`}>{children}</span>;
 }

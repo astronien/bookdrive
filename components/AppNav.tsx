@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { useLibrary } from '@/lib/store/library';
+import StatsRing from '@/components/StatsRing';
 
-export interface NavItem { href: string; label: string }
+export interface NavItem { href: string; label: string; key?: string }
 
 export default function AppNav({ items, email }: { items: NavItem[]; email?: string | null }) {
   return (
-    <Suspense fallback={<aside className="hidden w-[252px] shrink-0 bg-navy md:block" />}>
+    <Suspense fallback={<aside className="hidden w-[268px] shrink-0 border-r border-line bg-white md:block" />}>
       <Inner items={items} email={email} />
     </Suspense>
   );
@@ -20,74 +21,88 @@ function Inner({ items, email }: { items: NavItem[]; email?: string | null }) {
   const params = useSearchParams();
   const status = params.get('status');
   const [open, setOpen] = useState(false);
+  const books = useLibrary((s) => s.books);
 
-  // เทียบทั้ง path และ query เพราะสามเมนูแรกชี้ /library เหมือนกัน ต่างกันแค่ ?status=
   const current = `${path}${status ? `?status=${status}` : ''}`;
   const title = items.find((n) => n.href === current)?.label ?? 'BookDrive';
 
-  // ปิดลิ้นชักทุกครั้งที่เปลี่ยนหน้า ไม่งั้นมันค้างทับเนื้อหาที่เพิ่งเปิด
   useEffect(() => { setOpen(false); }, [current]);
-
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
+  const stats = useMemo(() => {
+    const finished = books.filter((b) => (b.percent ?? 0) >= 95).length;
+    const series = new Set(books.map((b) => b.series?.name).filter(Boolean)).size;
+    return { finished, total: books.length, series };
+  }, [books]);
+
+  // จำนวนต่อเมนู — BookFusion โชว์ตัวเลขข้างทุกอัน ทำให้รู้ขนาดชั้นหนังสือทันที
+  const counts: Record<string, number> = {
+    '/library': books.length,
+    '/library?status=reading': books.filter((b) => (b.percent ?? 0) > 0 && (b.percent ?? 0) < 95).length,
+    '/library?status=finished': stats.finished,
+  };
+
   const list = (
-    <nav className="flex-1 space-y-0.5 overflow-y-auto px-2.5 pb-4">
-      {items.map((n) => (
-        <Link
-          key={n.href}
-          href={n.href}
-          className={`block rounded-[9px] px-[11px] py-3 text-[14px] font-medium transition md:py-2.5 md:text-[13.5px] ${
-            n.href === current ? 'bg-navy-3 text-white' : 'text-[#c3c8e4] hover:bg-navy-2 hover:text-white'
-          }`}
-        >
-          {n.label}
-        </Link>
-      ))}
+    <nav className="flex-1 overflow-y-auto px-3 pb-4 pt-2">
+      {items.map((n) => {
+        const on = n.href === current;
+        const c = counts[n.href];
+        return (
+          <Link
+            key={n.href}
+            href={n.href}
+            className={`mb-0.5 flex items-center rounded-[10px] px-3 py-2.5 text-[14px] transition md:text-[13.5px] ${
+              on ? 'bg-brand-soft font-semibold text-brand' : 'font-medium text-ink/75 hover:bg-shell'
+            }`}
+          >
+            <span className="min-w-0 flex-1 truncate">{n.label}</span>
+            {typeof c === 'number' && (
+              <span className={`ml-2 shrink-0 text-[11.5px] ${on ? 'text-brand' : 'text-muted'}`}>{c}</span>
+            )}
+          </Link>
+        );
+      })}
     </nav>
   );
 
   const brand = (
-    <div className="flex h-16 items-center gap-2.5 px-[18px]">
-      <div className="grid h-[30px] w-[30px] place-items-center rounded-lg bg-accent text-[15px] font-bold text-navy">B</div>
-      <span className="text-[17px] font-bold tracking-tight text-white">BookDrive</span>
-    </div>
+    <Link href="/library" className="flex h-16 items-center gap-2.5 px-[18px]">
+      <div className="grid h-[30px] w-[30px] place-items-center rounded-[9px] bg-brand text-[15px] font-bold text-white">B</div>
+      <span className="text-[17px] font-bold tracking-tight text-ink">BookDrive</span>
+    </Link>
+  );
+
+  const body = (
+    <>
+      {brand}
+      <StatsRing finished={stats.finished} total={stats.total} hours={stats.series} pages={books.length} />
+      <div className="mx-[18px] my-4 border-t border-line" />
+      {list}
+      <div className="truncate border-t border-line px-[18px] py-3.5 text-[11.5px] text-muted">{email}</div>
+    </>
   );
 
   return (
     <>
-      {/* ---------- จอใหญ่: แถบข้างถาวร ---------- */}
-      <aside className="hidden w-[252px] shrink-0 flex-col bg-navy text-white md:flex">
-        {brand}
-        {list}
-        <div className="truncate border-t border-white/10 px-[18px] py-3.5 text-[11.5px] text-[#9aa0c4]">{email}</div>
-      </aside>
+      <aside className="hidden w-[268px] shrink-0 flex-col border-r border-line bg-white md:flex">{body}</aside>
 
-      {/* ---------- จอเล็ก: แถบบนคงที่ ---------- */}
-      <div className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 bg-navy px-3 text-white md:hidden">
-        <button
-          onClick={() => setOpen(true)}
-          aria-label="เปิดเมนู"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg active:bg-navy-2"
-        >
+      <div className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 border-b border-line bg-white px-3 md:hidden">
+        <button onClick={() => setOpen(true)} aria-label="เปิดเมนู"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-ink active:bg-shell">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 6h18M3 12h18M3 18h18" />
           </svg>
         </button>
-        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{title}</span>
+        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">{title}</span>
       </div>
 
-      {/* ---------- ลิ้นชัก ---------- */}
       {open && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <button aria-label="ปิดเมนู" onClick={() => setOpen(false)} className="absolute inset-0 bg-black/50" />
-          <div className="absolute inset-y-0 left-0 flex w-[264px] flex-col bg-navy shadow-2xl">
-            {brand}
-            {list}
-            <div className="truncate border-t border-white/10 px-[18px] py-3.5 text-[11.5px] text-[#9aa0c4]">{email}</div>
-          </div>
+          <button aria-label="ปิดเมนู" onClick={() => setOpen(false)} className="absolute inset-0 bg-ink/40" />
+          <div className="absolute inset-y-0 left-0 flex w-[280px] flex-col bg-white shadow-2xl">{body}</div>
         </div>
       )}
     </>

@@ -58,24 +58,24 @@ export default function SeriesCard({ name, books }: { name: string; books: Book[
               )
             }
           >
-            {inProgress && (
-              <div className="absolute inset-x-0 bottom-0 h-[3px] bg-black/25">
-                <div className="h-full bg-accent" style={{ width: `${avg}%` }} />
-              </div>
-            )}
+
           </Book3D>
 
         </div>
       </TiltCard>
 
-      <div className="pt-2.5">
-        <div className="mb-1 flex flex-wrap gap-1">
+      <div className="mt-2.5 h-[3px] w-full rounded-full bg-line">
+        {inProgress && <div className="h-full rounded-full bg-amber" style={{ width: `${avg}%` }} />}
+      </div>
+
+      <div className="pt-2">
+        <div className="truncate text-[11.2px] text-muted">{authors.join(', ') || '—'}</div>
+        <div className="mt-0.5 line-clamp-2 text-[13px] font-semibold leading-snug">{name}</div>
+        <div className="mt-1.5 flex flex-wrap gap-1">
           <CountTag>{books.length} เล่ม</CountTag>
           {readCount > 0 && <DoneTag>อ่านจบ {readCount}</DoneTag>}
           {formats.map((f) => <FormatTag key={f} format={f} />)}
         </div>
-        <div className="line-clamp-2 text-[12.8px] font-semibold leading-snug">{name}</div>
-        <div className="mt-0.5 truncate text-[11.2px] text-muted">{authors.join(', ') || '—'}</div>
       </div>
     </Link>
   );

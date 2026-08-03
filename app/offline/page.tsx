@@ -11,7 +11,7 @@ export default function OfflinePage() {
           หนังสือที่กด &ldquo;เก็บไว้อ่านออฟไลน์&rdquo; ไว้แล้วยังเปิดอ่านได้ตามปกติ
         </p>
         <a href="/library"
-          className="mt-5 inline-block h-[38px] rounded-[10px] bg-accent px-4 text-[13.5px] font-semibold leading-[38px] text-[#08312e]">
+          className="mt-5 inline-block h-[38px] rounded-[10px] bg-brand px-4 text-[13.5px] font-semibold leading-[38px] text-white">
           ไปหน้าไลบรารี
         </a>
       </div>

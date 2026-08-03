@@ -43,7 +43,7 @@ export default function RoomPage() {
               <p className="mt-2 text-[13px] text-white/60">เชื่อม Calibre library แล้วสแกนก่อน</p>
               <Link
                 href="/library"
-                className="mt-4 inline-block h-[38px] rounded-[10px] bg-accent px-4 text-[13.5px] font-semibold leading-[38px] text-[#08312e]"
+                className="mt-4 inline-block h-[38px] rounded-[10px] bg-brand px-4 text-[13.5px] font-semibold leading-[38px] text-white"
               >
                 ไปหน้าไลบรารี
               </Link>
@@ -102,7 +102,7 @@ export default function RoomPage() {
               <div className="mt-5 flex gap-2">
                 <Link
                   href={`/read/${picked.id}`}
-                  className="h-[40px] flex-1 rounded-[10px] bg-accent text-center text-[13.5px] font-semibold leading-[40px] text-[#08312e] transition hover:bg-accent-d"
+                  className="h-[40px] flex-1 rounded-[10px] bg-brand text-center text-[13.5px] font-semibold leading-[40px] text-white transition hover:bg-brand-d"
                 >
                   อ่านเล่มนี้
                 </Link>

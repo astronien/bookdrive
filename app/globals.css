@@ -1,16 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --color-navy: #191d44;
-  --color-navy-2: #232a5c;
-  --color-navy-3: #2e3672;
-  --color-accent: #4ecdc4;
-  --color-accent-d: #3ab5ac;
-  --color-coral: #ff6b6b;
-  --color-shell: #f5f6fa;
-  --color-ink: #1a1c2e;
-  --color-muted: #8b90a8;
-  --color-line: #e6e8f0;
+  /* โทนตาม BookFusion — พื้นสว่างเกือบขาว ตัดด้วยน้ำเงินสด
+     ของเดิมเป็นแถบข้างกรมท่าเข้ม + เขียวมิ้นต์ ซึ่งคนละภาษากันคนละเรื่อง */
+  --color-brand: #2f6bff;
+  --color-brand-d: #1f52d8;
+  --color-brand-soft: #eaf0ff;
+
+  /* navy ยังเป็นสีเข้มเหมือนเดิม ใช้กับเมนูลอย/ป้ายเข้ม/หน้าล็อกอิน
+     แถบข้างเปลี่ยนไปใช้ bg-white ตรง ๆ แล้ว ไม่ได้พึ่งตัวแปรนี้
+     (เคยเผลอเอา navy ไปเป็นสีขาว ทำให้ bg-navy text-white กลายเป็นขาวบนขาว) */
+  --color-navy: #1b1f2e;
+  --color-navy-2: #2a3042;
+  --color-navy-3: #363d52;
+
+  --color-accent: #2f6bff;
+  --color-accent-d: #1f52d8;
+  --color-coral: #ff5b6b;
+  --color-mint: #22c55e;      /* ปุ่ม "อ่านต่อ" */
+  --color-amber: #ffc24b;     /* แถบความคืบหน้าใต้ปก */
+
+  --color-shell: #f7f8fc;
+  --color-ink: #1b1f2e;
+  --color-muted: #9aa0b4;
+  --color-line: #e9ecf5;
 }
 
 html, body { height: 100%; }
@@ -248,3 +261,15 @@ body { background: var(--color-shell); color: var(--color-ink); }
 
 /* กันแถบที่อยู่ล่างสุดโดนแถบ home indicator ของ iPhone ทับ */
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* ---------- แถวเลื่อนแนวนอนแบบ BookFusion ---------- */
+.hrow {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+.hrow::-webkit-scrollbar { display: none; }
+.hrow > * { scroll-snap-align: start; flex: 0 0 auto; }
