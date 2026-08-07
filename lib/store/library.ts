@@ -218,8 +218,9 @@ export const useLibrary = create<State>((set, get) => ({
       set({ scan: { phase: 'idle', done: 0, total: 0 } });
       throw new Error((await res.json()).error ?? 'สแกนไม่สำเร็จ');
     }
-    const { books: found, metadataDbId } = (await res.json()) as {
+    const { books: found, metadataDbId, metadataDbModified } = (await res.json()) as {
       metadataDbId?: string;
+      metadataDbModified?: string;
       books: {
         folderId: string;
         folderName: string;
@@ -239,7 +240,11 @@ export const useLibrary = create<State>((set, get) => ({
     if (metadataDbId) {
       set({ scan: { phase: 'db', done: 0, total: 1 } });
       try {
-        const r = await fetch(`/api/drive/file/${metadataDbId}`);
+        /* ?t=modifiedTime ไม่ใช่ของประดับ — ถ้าไม่มี เบราว์เซอร์จะหยิบ db ก้อนเก่า
+           จากแคชมาให้ แล้วการแก้ข้อมูลใน Calibre จะไม่มีวันขึ้นบนเว็บ
+           no-store ซ้ำอีกชั้นกัน HTTP cache ระหว่างทางที่ไม่สนใจ query string */
+        const bust = metadataDbModified ? `?t=${encodeURIComponent(metadataDbModified)}` : '';
+        const r = await fetch(`/api/drive/file/${metadataDbId}${bust}`, { cache: 'no-store' });
         if (r.ok) dbMeta = await readCalibreDb(await r.blob());
       } catch {
         /* CDN ล่ม, ไฟล์เสีย, หรือ Calibre เวอร์ชันที่ schema ต่างไป — ถอยไปใช้ .opf */
@@ -320,7 +325,8 @@ export const useLibrary = create<State>((set, get) => ({
     built.push(...await pool(withOpf, 8, async (f) => {
       let meta: OpfMeta | null = null;
       try {
-        const r = await fetch(`/api/drive/file/${f.opfFileId}`);
+        // opf โดนแคชค้างแบบเดียวกับ db ได้ ไฟล์เล็กและเป็นแค่ทางสำรองแล้ว ขอของสดตรง ๆ
+        const r = await fetch(`/api/drive/file/${f.opfFileId}`, { cache: 'no-store' });
         if (r.ok) meta = parseOpf(await r.text());
       } catch {
         /* opf พังหรือโหลดไม่ได้ */

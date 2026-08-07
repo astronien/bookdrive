@@ -39,8 +39,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return new Response(upstream.body, {
       headers: {
         'Content-Type': upstream.headers.get('content-type') ?? 'application/octet-stream',
-        // Drive file id คงที่ตลอดอายุไฟล์ แคชยาวได้ ช่วยมากตอนไลบรารีมีปกหลายร้อยรูป
-        'Cache-Control': 'private, max-age=31536000, immutable',
+        /* เดิมเขียนว่า 'private, max-age=31536000, immutable' โดยให้เหตุผลว่า
+           "Drive file id คงที่ตลอดอายุไฟล์" — ซึ่งจริง แต่สรุปผิด
+           id คงที่ก็จริง แต่ *เนื้อไฟล์เปลี่ยนได้* โดยที่ id ไม่เปลี่ยน
+           immutable แปลว่าห้ามเบราว์เซอร์ revalidate เลยแม้แต่ครั้งเดียว
+           metadata.db จึงถูกแช่ไว้ในแคชตลอดกาล ผู้ใช้แก้ข้อมูลใน Calibre
+           กดรีเฟรชกี่รอบก็ได้ไฟล์เก่ากลับมา (เจอจริง)
+
+           ตัด immutable ออกและลดเหลือ 30 วัน — ปกกับไฟล์หนังสือยังได้ประโยชน์
+           จากแคชเต็มที่ ส่วนไฟล์ที่เปลี่ยนบ่อยฝั่ง client เติม ?t=modifiedTime
+           ต่อท้าย URL เพื่อบังคับให้เป็นคนละ cache key เมื่อไฟล์ถูกแก้ */
+        'Cache-Control': 'private, max-age=2592000',
       },
     });
   } catch (e) {

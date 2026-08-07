@@ -156,6 +156,8 @@ export async function POST(req: Request) {
       bookCount: bookFolders.length,
       metadataDbId: dbFile?.id,
       metadataDbSize: Number(dbFile?.size ?? 0),
+      // ใช้เป็น cache key ฝั่ง client — แก้ข้อมูลใน Calibre เมื่อไหร่ค่านี้ขยับ
+      metadataDbModified: dbFile?.modifiedTime,
       books: bookFolders,
     });
   } catch (e) {
