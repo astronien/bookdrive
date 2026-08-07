@@ -3,9 +3,12 @@
 export type ReaderTheme = 'light' | 'sepia' | 'dark' | 'night';
 export type ReaderFlow = 'paginated' | 'scrolled';
 
+export type BuiltinFont = 'serif' | 'sans' | 'dyslexic';
+
 export interface ReaderPrefs {
   theme: ReaderTheme;
-  fontFamily: 'serif' | 'sans' | 'dyslexic';
+  /** 'serif' | 'sans' | 'dyslexic' หรือชื่อ family ของฟอนต์ที่ผู้ใช้เพิ่มเอง (ขึ้นต้น bd-) */
+  fontFamily: string;
   fontSize: number;      // px
   lineHeight: number;    // ตัวคูณ
   width: number;         // ความกว้างคอลัมน์สูงสุด px
@@ -56,12 +59,23 @@ export const THEMES: Record<ReaderTheme, { bg: string; fg: string; label: string
   night: { bg: '#000000', fg: '#9aa0ab', link: '#5aa9e6', label: 'กลางคืน' },
 };
 
-export const FONT_STACK: Record<ReaderPrefs['fontFamily'], string> = {
+export const FONT_STACK: Record<BuiltinFont, string> = {
   serif: "'Lora', 'Noto Serif Thai', Georgia, serif",
   sans: "'Inter', 'Noto Sans Thai', system-ui, sans-serif",
   // ฟอนต์สำหรับผู้มีภาวะดิสเล็กเซีย — ตัวอักษรหนักด้านล่างช่วยกันสลับตัว
   dyslexic: "'Atkinson Hyperlegible', 'Comic Sans MS', 'Noto Sans Thai', sans-serif",
 };
+
+/**
+ * แปลงค่า fontFamily ที่บันทึกไว้ให้เป็น CSS font stack
+ *
+ * ฟอนต์ที่ผู้ใช้เพิ่มเองไม่ได้อยู่ใน FONT_STACK จึงต้องต่อ fallback ให้เอง —
+ * ฟอนต์ละตินหลายตัวไม่มีสระไทย ถ้าไม่มีตัวสำรองต่อท้าย ข้อความไทยจะกลายเป็นกล่องว่าง
+ */
+export function fontStackFor(f: string): string {
+  if (f in FONT_STACK) return FONT_STACK[f as BuiltinFont];
+  return `'${f}', 'Noto Serif Thai', 'Noto Sans Thai', Georgia, serif`;
+}
 
 /** แปลงวินาทีเป็นข้อความอ่านง่าย */
 export function fmtDuration(ms: number) {

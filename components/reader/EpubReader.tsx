@@ -4,7 +4,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import { db, getBookBlob } from '@/lib/db/idb';
 import { useLibrary } from '@/lib/store/library';
 import { addAnnotation, listAnnotations, removeAnnotation } from '@/lib/reader/annotations';
-import { FONT_STACK, THEMES, type ReaderPrefs } from '@/lib/reader/prefs';
+import { fontStackFor, THEMES, type ReaderPrefs } from '@/lib/reader/prefs';
+import { fontFaceCss } from '@/lib/reader/fonts';
 import type { Annotation, Book, BookFile, HighlightColor, Progress } from '@/lib/types';
 
 export interface TocItem { label: string; href: string; depth: number }
@@ -43,6 +44,10 @@ const EpubReader = forwardRef<EpubHandle, Props>(function EpubReader(
   cb.current = { onToc, onLocation, onSelection, onAnnotations, saveProgress };
 
   const selRef = useRef<{ cfi: string; text: string } | null>(null);
+  // CSS @font-face ล่าสุด + ฟังก์ชันฉีดเข้า iframe — เก็บเป็น ref เพราะ hook ของ epub.js
+  // ถูกลงทะเบียนครั้งเดียวตอนสร้าง rendition แต่ต้องอ่านค่าล่าสุดเสมอ
+  const fontCssRef = useRef('');
+  const injectRef = useRef<((doc: Document, css: string) => void) | null>(null);
 
   // ---------- โหลดหนังสือ ----------
   useEffect(() => {
@@ -107,6 +112,27 @@ const EpubReader = forwardRef<EpubHandle, Props>(function EpubReader(
         }
       }
 
+      /* ---------- ฟอนต์ที่ผู้ใช้เพิ่มเอง ----------
+         เนื้อหนังสือถูกวาดใน iframe ซึ่งมี document คนละตัวกับหน้าหลัก
+         document.fonts.add() ที่หน้าหลักจึงไปไม่ถึง ต้องแปะ @font-face
+         ลงในเอกสารของ iframe เองทุกครั้งที่มีหน้าใหม่ถูกเรนเดอร์
+         (epub.js สร้าง document ใหม่ทุกครั้งที่ข้ามบท ไม่ใช่ครั้งเดียวจบ) */
+      const injectFonts = (doc: Document, css: string) => {
+        if (!css) return;
+        let tag = doc.getElementById('bd-fonts') as HTMLStyleElement | null;
+        if (!tag) {
+          tag = doc.createElement('style');
+          tag.id = 'bd-fonts';
+          doc.head?.appendChild(tag);
+        }
+        if (tag.textContent !== css) tag.textContent = css;
+      };
+      fontCssRef.current = await fontFaceCss();
+      rendition.hooks.content.register((contents: any) => {
+        injectFonts(contents.document, fontCssRef.current);
+      });
+      injectRef.current = injectFonts;
+
       rendition.on('relocated', (loc: any) => {
         const percent = (b.locations.percentageFromCfi(loc.start.cfi) ?? 0) * 100;
         cb.current.saveProgress(book.id, { epubCfi: loc.start.cfi, percent });
@@ -151,6 +177,21 @@ const EpubReader = forwardRef<EpubHandle, Props>(function EpubReader(
   }, [book.id, file.driveFileId, prefs.flow]);
 
   // ---------- ปรับหน้าตาแบบไม่ต้องโหลดใหม่ ----------
+  // เพิ่ม/ลบฟอนต์ระหว่างเปิดหนังสืออยู่ ต้องอัปเดตหน้าที่เรนเดอร์ไปแล้วด้วย
+  // ไม่ใช่รอให้ข้ามบทก่อนถึงจะเห็นผล
+  useEffect(() => {
+    const r = rendRef.current;
+    if (!r) return;
+    let dead = false;
+    (async () => {
+      const css = await fontFaceCss();
+      if (dead) return;
+      fontCssRef.current = css;
+      for (const c of r.getContents() ?? []) injectRef.current?.(c.document, css);
+    })();
+    return () => { dead = true; };
+  }, [prefs.fontFamily]);
+
   useEffect(() => {
     const r = rendRef.current;
     if (!r) return;
@@ -159,7 +200,7 @@ const EpubReader = forwardRef<EpubHandle, Props>(function EpubReader(
       body: {
         background: t.bg,
         color: t.fg,
-        'font-family': `${FONT_STACK[prefs.fontFamily]} !important`,
+        'font-family': `${fontStackFor(prefs.fontFamily)} !important`,
         'line-height': `${prefs.lineHeight} !important`,
         'text-align': prefs.justify ? 'justify' : 'start',
         padding: `${prefs.margin}px 0`,

@@ -6,6 +6,8 @@ import { useLibrary } from '@/lib/store/library';
 import { db } from '@/lib/db/idb';
 import { pickFile, type BookFormat, type Annotation, type Progress } from '@/lib/types';
 import { DEFAULT_PREFS, FONT_STACK, THEMES, fmtDuration, loadPrefs, savePrefs, type ReaderPrefs } from '@/lib/reader/prefs';
+import { FONT_ACCEPT, addFont, listFonts, removeFont, registerFontsInPage } from '@/lib/reader/fonts';
+import type { FontRow } from '@/lib/db/idb';
 import { HIGHLIGHT_COLORS, listAnnotations, removeAnnotation } from '@/lib/reader/annotations';
 import OfflineButton from '@/components/OfflineButton';
 import type { EpubHandle, SearchHit, TocItem } from '@/components/reader/EpubReader';
@@ -24,6 +26,8 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
   const { books, load, setPreferredFormat } = useLibrary();
 
   const [prefs, setPrefs] = useState<ReaderPrefs>(DEFAULT_PREFS);
+  const [fonts, setFonts] = useState<FontRow[]>([]);
+  const [fontErr, setFontErr] = useState<string | null>(null);
   const [panel, setPanel] = useState<Panel>(null);
   const [toc, setToc] = useState<TocItem[]>([]);
   const [outline, setOutline] = useState<PdfOutlineItem[]>([]);
@@ -54,6 +58,31 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
   const update = useCallback((patch: Partial<ReaderPrefs>) => {
     setPrefs((p) => { const n = { ...p, ...patch }; savePrefs(n); return n; });
   }, []);
+
+  // ---------- ฟอนต์ที่ผู้ใช้เพิ่มเอง ----------
+  useEffect(() => {
+    listFonts().then(setFonts);
+    // ลงทะเบียนกับหน้าหลักด้วย ไม่งั้นปุ่มตัวอย่างในเมนูจะแสดงเป็นฟอนต์ระบบ
+    registerFontsInPage();
+  }, []);
+
+  async function onAddFont(file: File) {
+    setFontErr(null);
+    try {
+      const row = await addFont(file);
+      setFonts(await listFonts());
+      update({ fontFamily: row.family });   // เพิ่มแล้วใช้เลย ไม่ต้องกดซ้ำ
+    } catch (e) {
+      setFontErr((e as Error).message);
+    }
+  }
+
+  async function dropFont(f: FontRow) {
+    await removeFont(f.id);
+    setFonts(await listFonts());
+    // กำลังใช้ตัวที่เพิ่งลบอยู่ ต้องดีดกลับไปฟอนต์ในตัว ไม่งั้นหน้าอ่านจะไม่มีฟอนต์
+    if (prefs.fontFamily === f.family) update({ fontFamily: 'serif' });
+  }
 
   // ---------- นับเวลาอ่านจริง ----------
   useEffect(() => {
@@ -329,6 +358,47 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
                         </button>
                       ))}
                     </div>
+
+                    {/* ฟอนต์ที่ผู้ใช้เพิ่มเอง — ปุ่มแสดงด้วยฟอนต์ตัวเองเลย
+                        เพราะชื่อไฟล์อย่างเดียวบอกไม่ได้ว่าหน้าตาเป็นยังไง */}
+                    {fonts.length > 0 && (
+                      <div className="mt-2 flex flex-col gap-1.5">
+                        {fonts.map((f) => (
+                          <div key={f.id} className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => update({ fontFamily: f.family })}
+                              style={{ fontFamily: `'${f.family}'` }}
+                              className={`h-9 min-w-0 flex-1 truncate rounded-lg border px-3 text-left text-[13px] ${
+                                prefs.fontFamily === f.family ? 'border-brand bg-brand text-white' : 'border-line'
+                              }`}
+                            >
+                              {f.family.replace(/^bd-/, '')}
+                            </button>
+                            <button
+                              onClick={() => dropFont(f)}
+                              aria-label={`ลบฟอนต์ ${f.family}`}
+                              className="h-9 shrink-0 rounded-lg border border-line px-2.5 text-[12px] text-muted hover:bg-shell"
+                            >
+                              ลบ
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <label className="mt-2 flex h-9 cursor-pointer items-center justify-center rounded-lg border border-dashed border-line text-[12px] text-muted hover:bg-shell">
+                      + เพิ่มฟอนต์จากเครื่อง
+                      <input type="file" accept={FONT_ACCEPT} className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = '';   // เลือกไฟล์เดิมซ้ำต้องยิง onChange อีกครั้ง
+                          if (file) onAddFont(file);
+                        }} />
+                    </label>
+                    {fontErr && <p className="mt-1.5 text-[11.5px] text-coral">{fontErr}</p>}
+                    <p className="mt-1.5 text-[11px] text-muted">
+                      .woff2 .woff .ttf .otf — เก็บไว้ในเครื่องนี้เท่านั้น ไม่ส่งขึ้น Drive
+                    </p>
                   </Section>
 
                   <Slider label="ขนาดตัวอักษร" value={prefs.fontSize} min={13} max={34} unit="px"
