@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { db, storageUsage } from '@/lib/db/idb';
 import { DEFAULT_SETTINGS, type Settings } from '@/lib/types';
+import {
+  motionSupported, motionNeedsPermission, requestMotionPermission,
+  startTilt, stopTilt,
+} from '@/lib/tilt/orientation';
 
 const fmtBytes = (n: number) => {
   if (!n) return '0 MB';
@@ -97,6 +101,46 @@ export default function SettingsClient() {
   const toggle = (k: keyof Settings) => () =>
     save({ ...s, [k]: !s[k], updatedAt: new Date().toISOString() });
 
+  /* การเอียงตามเซนเซอร์ต่างจาก toggle ตัวอื่น เพราะ iOS ยอมรับ requestPermission()
+     เฉพาะที่เรียกจาก user gesture เท่านั้น จึงต้องขอสิทธิ์ *ตรงนี้* ในจังหวะที่กดปุ่ม
+     ถ้าไปขอตอนโหลดหน้าหรือใน useEffect จะโดนปฏิเสธทันทีโดยไม่ขึ้นกล่องถามด้วยซ้ำ */
+  const [motionErr, setMotionErr] = useState<string | null>(null);
+  /* ฝั่ง server ไม่มี window จึงตอบว่า "ไม่รองรับ" เสมอ ถ้าเอาไปใช้ตอน render ตรง ๆ
+     ข้อความจะไม่ตรงกับฝั่ง client แล้วเกิด hydration mismatch — รอ mount ก่อนค่อยถาม */
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  async function toggleTilt() {
+    if (s.tiltOnMotion) {
+      stopTilt();
+      setMotionErr(null);
+      return save({ ...s, tiltOnMotion: false, updatedAt: new Date().toISOString() });
+    }
+    if (!motionSupported()) return setMotionErr('เครื่องนี้ไม่มีเซนเซอร์การหมุน');
+
+    const r = await requestMotionPermission();
+    if (r !== 'granted') {
+      return setMotionErr(
+        r === 'denied'
+          ? 'ถูกปฏิเสธ — เปิดใหม่ได้ที่ ตั้งค่า iOS → Safari → Motion & Orientation Access'
+          : 'ขอสิทธิ์ไม่สำเร็จ'
+      );
+    }
+    setMotionErr(null);
+    startTilt();
+    return save({ ...s, tiltOnMotion: true, updatedAt: new Date().toISOString() });
+  }
+
+  const motionMsg =
+    motionErr ??
+    (!mounted
+      ? 'เอียงเครื่องแล้วปกจะเอียงตาม'
+      : !motionSupported()
+      ? 'ใช้ได้เฉพาะเครื่องที่มีเซนเซอร์การหมุน (มือถือ/แท็บเล็ต)'
+        : motionNeedsPermission()
+          ? 'เอียงเครื่องแล้วปกจะเอียงตาม — กดเปิดเพื่อขออนุญาตใช้เซนเซอร์'
+          : 'เอียงเครื่องแล้วปกจะเอียงตาม');
+
   async function clearCache() {
     if (!confirm('ลบไฟล์หนังสือที่ดาวน์โหลดไว้ทั้งหมด? ข้อมูลการอ่านและไฮไลต์ไม่หาย')) return;
     await db.blobs.clear();
@@ -187,6 +231,9 @@ export default function SettingsClient() {
         )}
 
         <div className="mt-3">
+          <Row title="เอียงปกตามการหมุนเครื่อง" desc={motionMsg}>
+            <Toggle on={s.tiltOnMotion} onClick={toggleTilt} />
+          </Row>
           <Row title="ดาวน์โหลดอัตโนมัติเมื่อเริ่มอ่าน" desc="เก็บไฟล์ไว้ในเครื่องเพื่ออ่านตอนออฟไลน์">
             <Toggle on={s.autoDownloadOnOpen} onClick={toggle('autoDownloadOnOpen')} />
           </Row>

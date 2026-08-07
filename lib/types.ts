@@ -124,6 +124,8 @@ export interface Settings {
   backupToDrive: boolean;
   /** ดาวน์โหลดไฟล์เก็บไว้อ่านออฟไลน์เมื่อเริ่มอ่าน */
   autoDownloadOnOpen: boolean;
+  /** เอียงการ์ดตามการหมุนเครื่องบนมือถือ (iOS ต้องกดอนุญาตก่อน) */
+  tiltOnMotion: boolean;
   /** ความถี่บันทึกความคืบหน้า (ms) */
   progressIntervalMs: number;
   /** ความถี่ตรวจการเปลี่ยนแปลงจากเครื่องอื่น (ms) */
@@ -137,6 +139,7 @@ export const DEFAULT_SETTINGS: Settings = {
   enrichMetadata: true,
   backupToDrive: false,
   autoDownloadOnOpen: true,
+  tiltOnMotion: false,
   progressIntervalMs: 10_000,
   changesPollMs: 60_000,
 };

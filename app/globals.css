@@ -79,6 +79,29 @@ body { background: var(--color-shell); color: var(--color-ink); }
   mix-blend-mode: soft-light;
 }
 
+/* ---------- เอียงตามการหมุนเครื่อง (มือถือ) ----------
+   <html> ได้คลาส tilt-motion ตอนเปิดใช้งาน แล้วการ์ดทุกใบอ่านมุมจากตัวแปรกลาง
+   ตัวเดียวกัน ไม่มี JS ต่อการ์ดเลย — สำคัญมากเพราะหน้าไลบรารีมีการ์ดร้อยกว่าใบ
+   และเวลาเอียงเครื่องทุกใบเอียงเท่ากันหมดอยู่แล้ว ต่างจากเมาส์ที่เอียงเฉพาะใบที่ชี้ */
+.tilt-motion .tilt-inner {
+  transform:
+    rotateX(var(--drx, 0deg))
+    rotateY(var(--dry, 0deg))
+    translateZ(6px);
+  /* สั้นมากเพราะค่าถูกเขียนใหม่ทุกเฟรมอยู่แล้ว ยาวกว่านี้จะรู้สึกหน่วงตามไม่ทันมือ */
+  transition: transform 0.08s linear;
+}
+/* แสงสะท้อนวิ่งสวนทางการเอียง ให้รู้สึกว่ามีแหล่งแสงจริงอยู่กับที่ */
+.tilt-motion .tilt-glare {
+  opacity: 0.55;
+  background: radial-gradient(
+    circle at calc(50% - var(--dry, 0deg) * 2.2) calc(50% + var(--drx, 0deg) * 2.2),
+    rgba(255, 255, 255, calc(var(--glare, 0.35) * 1)) 0%,
+    rgba(255, 255, 255, calc(var(--glare, 0.35) * 0.35)) 30%,
+    rgba(255, 255, 255, 0) 64%
+  );
+}
+
 /* ปิดเอฟเฟกต์ให้ผู้ที่ตั้งค่าลดการเคลื่อนไหว */
 @media (prefers-reduced-motion: reduce) {
   .tilt-inner { transform: none !important; transition: none; }

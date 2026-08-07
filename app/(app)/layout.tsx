@@ -1,6 +1,7 @@
 import AppNav from '@/components/AppNav';
 import OfflineBar from '@/components/OfflineBar';
 import SessionBanner from '@/components/SessionBanner';
+import TiltMotion from '@/components/TiltMotion';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
@@ -19,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen">
+      <TiltMotion />
       <AppNav items={NAV} email={session.user?.email} />
       {/* pt-14 เผื่อที่ให้แถบบนบนจอเล็ก ซึ่งเป็น fixed จึงไม่กินพื้นที่เอง */}
       <main className="flex min-w-0 flex-1 flex-col pt-14 md:pt-0">
