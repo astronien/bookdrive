@@ -261,18 +261,32 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
       {panel && (
         <>
           <button aria-label="ปิด" onClick={() => setPanel(null)} className="fixed inset-0 z-30 bg-black/25" />
-          <aside className="fixed right-0 top-0 z-40 flex h-full w-full flex-col bg-white text-ink shadow-2xl sm:w-[330px]">
-            <div className="flex h-[52px] shrink-0 items-center border-b border-line px-4">
+          {/* h-[100dvh] ไม่ใช่ h-full — บน iOS Safari ความสูงของ fixed element
+              อ้างกับ viewport ที่รวมพื้นที่ใต้แถบ URL ท้ายแผงจึงถูกตัดหาย */}
+          <aside className="fixed right-0 top-0 z-40 flex h-[100dvh] w-full flex-col bg-white text-ink shadow-2xl sm:w-[330px]">
+            {/* ต้องเผื่อ safe-area ที่นี่ด้วย ไม่ใช่แค่แถบของหน้าอ่าน
+                แผงเป็น fixed top-0 ปุ่มปิดจึงไปอยู่ *ใต้รอยบาก* ของ iPhone แล้วกดไม่โดน
+                กลายเป็นเข้าแผงตั้งค่าแล้วออกไม่ได้เลย ต้องปิดแท็บทิ้งอย่างเดียว */}
+            <div className="flex h-[calc(52px+env(safe-area-inset-top))] shrink-0 items-center border-b border-line px-4 pt-[env(safe-area-inset-top)]">
               <b className="flex-1 text-[13.5px]">
                 {panel === 'toc' && 'สารบัญ'}
                 {panel === 'prefs' && 'การแสดงผล'}
                 {panel === 'search' && 'ค้นหาในเล่ม'}
                 {panel === 'notes' && 'ไฮไลต์ในเล่มนี้'}
               </b>
-              <button onClick={() => setPanel(null)} className="px-2 text-muted hover:text-ink">✕</button>
+              {/* -mr-2 กับ h-11 w-11 เพื่อให้พื้นที่กดถึงขนาดขั้นต่ำที่นิ้วกดติด (44px)
+                  ของเดิมเป็นตัวอักษร ✕ ที่มี padding แค่ 8px ซ้ายขวา เล็กเกินไปบนมือถือ */}
+              <button
+                onClick={() => setPanel(null)}
+                aria-label="ปิด"
+                className="-mr-2 grid h-11 w-11 shrink-0 place-items-center rounded-full text-[15px] text-muted hover:bg-shell hover:text-ink"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-3">
+            {/* pb เผื่อแถบ home indicator ไม่งั้นตัวเลือกอันสุดท้ายถูกเส้นขีดล่างทับ */}
+            <div className="flex-1 overflow-y-auto p-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
               {panel === 'toc' && (
                 nav.length ? nav.map((it, i) => (
                   <button key={i}
@@ -443,6 +457,15 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
                       onChange={(e) => update({ justify: e.target.checked })} className="accent-accent" />
                     จัดข้อความชิดขอบทั้งสองด้าน
                   </label>
+
+                  {/* แผงนี้ยาวมากหลังเพิ่มฟอนต์ในตัว 12 ตัว เลื่อนกลับขึ้นไปหาปุ่มบนสุด
+                      บนมือถือลำบาก มีปุ่มปิดตรงที่นิ้วอยู่แล้วด้วยจะจบง่ายกว่า */}
+                  <button
+                    onClick={() => setPanel(null)}
+                    className="h-11 w-full rounded-lg bg-navy text-[13px] font-semibold text-white sm:hidden"
+                  >
+                    เสร็จสิ้น
+                  </button>
                 </div>
               )}
             </div>
