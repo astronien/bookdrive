@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLibrary } from '@/lib/store/library';
 import { db } from '@/lib/db/idb';
 import { pickFile, type BookFormat, type Annotation, type Progress } from '@/lib/types';
-import { DEFAULT_PREFS, FONT_STACK, THEMES, fmtDuration, loadPrefs, savePrefs, type ReaderPrefs } from '@/lib/reader/prefs';
+import { BUILTIN_FONTS, DEFAULT_PREFS, FONT_GROUP_LABEL, THEMES, fmtDuration, fontStackFor, loadPrefs, savePrefs, type ReaderPrefs } from '@/lib/reader/prefs';
 import { FONT_ACCEPT, addFont, listFonts, removeFont, registerFontsInPage } from '@/lib/reader/fonts';
 import type { FontRow } from '@/lib/db/idb';
 import { HIGHLIGHT_COLORS, listAnnotations, removeAnnotation } from '@/lib/reader/annotations';
@@ -349,15 +349,31 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
                   </Section>
 
                   <Section label="ฟอนต์">
-                    <div className="flex gap-2">
-                      {(['serif', 'sans', 'dyslexic'] as const).map((f) => (
-                        <button key={f} onClick={() => update({ fontFamily: f })}
-                          className={`h-9 flex-1 rounded-lg border text-[12px] ${prefs.fontFamily === f ? 'border-brand bg-brand text-white' : 'border-line'}`}
-                          style={{ fontFamily: FONT_STACK[f] }}>
-                          {f === 'serif' ? 'Serif' : f === 'sans' ? 'Sans' : 'Dyslexic'}
-                        </button>
-                      ))}
-                    </div>
+                    {/* ปุ่มแต่ละอันแสดงด้วยฟอนต์ของตัวเอง และใช้คำไทยเป็นตัวอย่าง
+                        เพราะจุดต่างที่สำคัญที่สุดคือหัวตัวอักษรกับสระ ไม่ใช่หน้าตาตัวโรมัน */}
+                    {(['serif', 'sans', 'looped', 'a11y'] as const).map((g) => {
+                      const items = BUILTIN_FONTS.filter((f) => f.group === g);
+                      if (!items.length) return null;
+                      return (
+                        <div key={g} className="mb-2">
+                          <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-wide text-muted">
+                            {FONT_GROUP_LABEL[g]}
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            {items.map((f) => (
+                              <button key={f.id} onClick={() => update({ fontFamily: f.id })}
+                                style={{ fontFamily: fontStackFor(f.id) }}
+                                className={`flex h-9 items-center justify-between gap-2 rounded-lg border px-3 text-left ${
+                                  prefs.fontFamily === f.id ? 'border-brand bg-brand text-white' : 'border-line'
+                                }`}>
+                                <span className="truncate text-[12.5px]">{f.label}</span>
+                                <span className="shrink-0 text-[13px] opacity-70">อ่านหนังสือ</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
 
                     {/* ฟอนต์ที่ผู้ใช้เพิ่มเอง — ปุ่มแสดงด้วยฟอนต์ตัวเองเลย
                         เพราะชื่อไฟล์อย่างเดียวบอกไม่ได้ว่าหน้าตาเป็นยังไง */}

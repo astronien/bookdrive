@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import { db, getBookBlob } from '@/lib/db/idb';
 import { useLibrary } from '@/lib/store/library';
 import { addAnnotation, listAnnotations, removeAnnotation } from '@/lib/reader/annotations';
-import { fontStackFor, THEMES, type ReaderPrefs } from '@/lib/reader/prefs';
+import { GOOGLE_FONTS_HREF, fontStackFor, THEMES, type ReaderPrefs } from '@/lib/reader/prefs';
 import { fontFaceCss } from '@/lib/reader/fonts';
 import type { Annotation, Book, BookFile, HighlightColor, Progress } from '@/lib/types';
 
@@ -160,6 +160,20 @@ const EpubReader = forwardRef<EpubHandle, Props>(function EpubReader(
          ทุกครั้งที่ข้ามบท ไม่ใช่ครั้งเดียวจบ */
       const injectStyle = (doc: Document, css: string) => {
         if (!css) return;
+
+        /* ฟอนต์ในตัวมาจาก Google Fonts — <link> ที่อยู่ในหน้าหลักไม่มีผลกับ iframe
+           เพราะเป็นคนละ document ต้องแปะซ้ำในนี้ ไม่งั้นเลือกฟอนต์แล้วจะตกไปใช้
+           ฟอนต์ระบบเหมือนเดิมทั้งที่ชื่อ family ถูกต้องแล้ว
+           ใช้ <link> ไม่ใช่ @import เพราะ @import ต้องเป็นกฎแรกของ stylesheet
+           ซึ่งชนกับ @font-face ของฟอนต์ที่ผู้ใช้เพิ่มเองที่ต่อกันอยู่ในก้อนเดียว */
+        if (!doc.getElementById('bd-gfonts')) {
+          const link = doc.createElement('link');
+          link.id = 'bd-gfonts';
+          link.rel = 'stylesheet';
+          link.href = GOOGLE_FONTS_HREF;
+          doc.head?.appendChild(link);
+        }
+
         let tag = doc.getElementById('bd-style') as HTMLStyleElement | null;
         if (!tag) {
           tag = doc.createElement('style');
