@@ -130,7 +130,7 @@ interface State {
 
   load: () => Promise<void>;
   connectCalibre: (folderId: string, name: string) => Promise<void>;
-  scanCalibre: (refresh?: boolean) => Promise<number>;
+  scanCalibre: (refresh?: boolean) => Promise<{ added: number; removed: number }>;
   setFilter: (patch: Partial<Filters>) => void;
   setSort: (s: SortKey) => void;
   resetFilters: () => void;
@@ -341,19 +341,41 @@ export const useLibrary = create<State>((set, get) => ({
       }, (done, total) => set({ scan: { phase: 'epub', done, total } })));
     }
 
-    if (!built.length) {
-      set({ scan: { phase: 'idle', done: 0, total: 0 } });
-      return 0;
-    }
+    // ไม่มีเล่มใหม่ ไม่ได้แปลว่าไม่มีอะไรต้องทำ — เล่มผีอาจต้องถูกตัดออก
+    // จึงห้าม return ตรงนี้ทิ้งเหมือนเดิม ปล่อยให้ไหลลงไปทำขั้น prune ก่อน
 
     set({ scan: { phase: 'saving', done: built.length, total: built.length } });
 
     // แทนที่เล่มเดิมด้วยตัวที่เพิ่งอ่านใหม่ (เทียบด้วย folderId) แล้วต่อท้ายเล่มใหม่
     const byFolder = new Map(built.map((b) => [b.folderId!, b]));
-    const merged = [
+    let merged = [
       ...get().books.map((b) => (b.folderId && byFolder.has(b.folderId) ? byFolder.get(b.folderId)! : b)),
       ...built.filter((b) => !known.has(b.folderId!)),
     ].sort((a, b) => a.title.localeCompare(b.title, 'th'));
+
+    /* ---------- ตัดเล่มที่หายไปจาก Drive แล้ว ----------
+       ถ้าไม่ทำขั้นนี้จะเกิดเล่มผีค้างอยู่ตลอดไป: พอผู้ใช้ลบหนังสือใน Calibre
+       แล้วเพิ่มกลับเข้ามาใหม่ Calibre จะสร้าง "โฟลเดอร์ใหม่" ให้ (folderId คนละตัว)
+       การ merge ข้างบนเทียบด้วย folderId จึงมองว่าเป็นคนละเล่ม แล้วเพิ่มเข้ามาอีกใบ
+       ส่วนใบเก่าไม่เคยถูกลบเพราะโค้ดเดิมเก็บ get().books ไว้ทั้งหมดโดยไม่เคยตรวจว่ายังมีจริงไหม
+
+       เจอจริงในไลบรารี: "ระบบจอมยุทธ์สุดโกงแห่งโลกคู่ขนาน 1-300" โผล่สองใบ
+       calibreId 336 เท่ากันทั้งคู่ แต่ folderId คนละตัว modifiedTime ห่างกันปีกว่า */
+    const alive = new Set(found.map((f) => f.folderId));
+    const ghosts = merged.filter((b) => b.source === 'calibre' && b.folderId && !alive.has(b.folderId));
+
+    /* กันพลาด: ถ้ารอบนี้ Drive คืนมาน้อยกว่าครึ่งของที่เคยมี แปลว่าน่าจะสแกนไม่ครบ
+       (เน็ตหลุด, token หมดอายุกลางคัน, เลือกโฟลเดอร์ผิด) ห้ามลบอะไรทั้งนั้น
+       ยอมให้มีเล่มผีค้างดีกว่าลบไลบรารีของผู้ใช้ทิ้งเพราะ request เดียวพลาด */
+    const prevCalibre = get().books.filter((b) => b.source === 'calibre').length;
+    const trustworthy = found.length * 2 >= prevCalibre;
+    let removed = 0;
+
+    if (ghosts.length && trustworthy) {
+      const dead = new Set(ghosts.map((b) => b.folderId));
+      merged = merged.filter((b) => !(b.folderId && dead.has(b.folderId)));
+      removed = ghosts.length;
+    }
 
     set({ books: merged });
     await persist({
@@ -364,7 +386,7 @@ export const useLibrary = create<State>((set, get) => ({
     });
 
     set({ scan: { phase: 'idle', done: 0, total: 0 } });
-    return built.length;
+    return { added: built.length, removed };
   },
 
   setFilter: (patch) => set({ filters: { ...get().filters, ...patch } }),

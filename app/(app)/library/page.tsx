@@ -73,11 +73,17 @@ function LibraryInner() {
     setBusy(true);
     setMsg(null);
     try {
-      const n = await scanCalibre(refresh);
-      setMsg(
+      const { added, removed } = await scanCalibre(refresh);
+      const parts = [
         refresh
-          ? `อ่าน metadata.opf ใหม่ ${n} เล่ม — ความคืบหน้าและไฮไลต์ยังอยู่ครบ`
-          : n ? `เพิ่มหนังสือใหม่ ${n} เล่ม` : 'ไม่พบหนังสือใหม่ — ไลบรารีเป็นปัจจุบันแล้ว'
+          ? `อ่าน metadata ใหม่ ${added} เล่ม`
+          : added ? `เพิ่มหนังสือใหม่ ${added} เล่ม` : null,
+        removed ? `ตัดเล่มที่ถูกลบไปจาก Drive แล้ว ${removed} เล่ม` : null,
+      ].filter(Boolean);
+      setMsg(
+        parts.length
+          ? `${parts.join(' · ')}${refresh ? ' — ความคืบหน้าและไฮไลต์ยังอยู่ครบ' : ''}`
+          : 'ไม่พบการเปลี่ยนแปลง — ไลบรารีเป็นปัจจุบันแล้ว'
       );
     } catch (e) {
       setMsg((e as Error).message);
