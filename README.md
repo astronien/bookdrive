@@ -37,7 +37,7 @@ npm run dev
 ```
 app/
   (app)/library      ไลบรารีแบบ grid
-  (app)/read/[id]    reader เต็มจอ
+  (reader)/read/[id] reader เต็มจอ ไม่มีเมนู (แยกกลุ่มออกจาก (app))
   api/auth           Auth.js + refresh token rotation
   api/drive/list     สแกนโฟลเดอร์ Books
   api/drive/file/    สตรีมไฟล์หนังสือ (ไม่ buffer ทั้งก้อน)

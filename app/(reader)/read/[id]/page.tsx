@@ -123,7 +123,7 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
     <div className="relative flex h-full flex-col" style={{ background: t.bg, color: t.fg }}>
       {/* ---------- แถบบน ---------- */}
       <header
-        className={`flex h-[52px] shrink-0 items-center gap-1.5 border-b px-3 transition-opacity ${chrome ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+        className={`flex h-[calc(52px+env(safe-area-inset-top))] shrink-0 items-center gap-1.5 border-b px-3 pt-[env(safe-area-inset-top)] transition-opacity ${chrome ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
         style={{ borderColor: 'rgba(128,128,128,.18)' }}
       >
         <Link href="/library" aria-label="กลับไปไลบรารี"
@@ -217,7 +217,7 @@ export default function ReadPage({ params }: { params: Promise<{ id: string }> }
 
       {/* ---------- แถบล่าง ---------- */}
       <footer
-        className={`flex h-[46px] shrink-0 items-center gap-3 border-t px-5 text-[11.5px] transition-opacity ${chrome ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+        className={`flex h-[calc(46px+env(safe-area-inset-bottom))] shrink-0 items-center gap-3 border-t px-5 pb-[env(safe-area-inset-bottom)] text-[11.5px] transition-opacity ${chrome ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
         style={{ borderColor: 'rgba(128,128,128,.18)' }}
       >
         <span className="shrink-0 opacity-60">{isPdf && pdfPages ? `${pdfPages} หน้า` : 'อ่านไปแล้ว'}</span>
