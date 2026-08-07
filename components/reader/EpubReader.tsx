@@ -31,6 +31,38 @@ interface Props {
   onAnnotations?: (items: Annotation[]) => void;
 }
 
+/* ตัวหนังสือทุกตำแหน่งที่ควรใช้ฟอนต์ที่ผู้ใช้เลือก
+   ตั้งที่ body อย่างเดียวไม่พอ — EPUB จำนวนมากตั้ง font-family ไว้ที่ p/div/span ของตัวเอง
+   ซึ่งชนะกฎที่ body เสมอ ต่อให้ body ใส่ !important ก็ตาม เพราะเป็นคนละ element
+   ไม่ใช่เรื่องการสืบทอด จึงต้องไล่ระบุให้ครบ */
+const TEXT_SEL = [
+  'html', 'body', 'p', 'div', 'span', 'li', 'dd', 'dt', 'td', 'th',
+  'blockquote', 'a', 'em', 'strong', 'i', 'b',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+].join(',');
+
+/** CSS ทั้งก้อนที่จะฉีดเข้า iframe — @font-face ของผู้ใช้ + ธีมของหน้าอ่าน */
+async function sheetFor(prefs: ReaderPrefs): Promise<string> {
+  const t = THEMES[prefs.theme];
+  const stack = fontStackFor(prefs.fontFamily);
+  const faces = await fontFaceCss();
+
+  return `${faces}
+${TEXT_SEL}{font-family:${stack} !important;}
+/* โค้ดต้องกว้างเท่ากันทุกตัว ไม่งั้นตารางและผังในหนังสือเทคนิคจะเพี้ยน */
+code,pre,kbd,samp{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace !important;}
+html{font-size:${prefs.fontSize}px;}
+body{background:${t.bg} !important;color:${t.fg} !important;padding:${prefs.margin}px 0 !important;text-align:${prefs.justify ? 'justify' : 'start'} !important;}
+p,li,div,blockquote{line-height:${prefs.lineHeight} !important;}
+a,a *{color:${t.link} !important;}
+img,svg{max-width:100% !important;height:auto !important;}
+.hl-yellow{background:rgba(255,217,74,.45);}
+.hl-green{background:rgba(110,231,168,.45);}
+.hl-blue{background:rgba(124,196,250,.45);}
+.hl-pink{background:rgba(249,168,212,.45);}
+.hl-purple{background:rgba(196,181,253,.45);}`;
+}
+
 const EpubReader = forwardRef<EpubHandle, Props>(function EpubReader(
   { book, file, prefs, onToc, onLocation, onSelection, onAnnotations }, ref
 ) {
@@ -44,9 +76,12 @@ const EpubReader = forwardRef<EpubHandle, Props>(function EpubReader(
   cb.current = { onToc, onLocation, onSelection, onAnnotations, saveProgress };
 
   const selRef = useRef<{ cfi: string; text: string } | null>(null);
-  // CSS @font-face ล่าสุด + ฟังก์ชันฉีดเข้า iframe — เก็บเป็น ref เพราะ hook ของ epub.js
+  // CSS ล่าสุด + ฟังก์ชันฉีดเข้า iframe — เก็บเป็น ref เพราะ hook ของ epub.js
   // ถูกลงทะเบียนครั้งเดียวตอนสร้าง rendition แต่ต้องอ่านค่าล่าสุดเสมอ
-  const fontCssRef = useRef('');
+  const cssRef = useRef('');
+  // hook ของ epub.js ลงทะเบียนครั้งเดียวตอนสร้าง rendition จึงมองไม่เห็น prefs ที่เปลี่ยนทีหลัง
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
   const injectRef = useRef<((doc: Document, css: string) => void) | null>(null);
 
   // ---------- โหลดหนังสือ ----------
@@ -112,26 +147,32 @@ const EpubReader = forwardRef<EpubHandle, Props>(function EpubReader(
         }
       }
 
-      /* ---------- ฟอนต์ที่ผู้ใช้เพิ่มเอง ----------
-         เนื้อหนังสือถูกวาดใน iframe ซึ่งมี document คนละตัวกับหน้าหลัก
-         document.fonts.add() ที่หน้าหลักจึงไปไม่ถึง ต้องแปะ @font-face
-         ลงในเอกสารของ iframe เองทุกครั้งที่มีหน้าใหม่ถูกเรนเดอร์
-         (epub.js สร้าง document ใหม่ทุกครั้งที่ข้ามบท ไม่ใช่ครั้งเดียวจบ) */
-      const injectFonts = (doc: Document, css: string) => {
+      /* ---------- ฉีดสไตล์เข้า iframe เอง ----------
+         เดิมใช้ rendition.themes.register()/select() ของ epub.js แต่ทดสอบบนเครื่องจริง
+         แล้วพบว่ามันสร้าง <style id="epubjs-inserted-css-"> ขึ้นมา *ว่างเปล่า*
+         ธีมทั้งก้อน (ฟอนต์ ระยะบรรทัด สี จัดขอบ) จึงไม่เคยถูกใช้เลย
+         รูปแบบข้อมูลที่ register() รับ กับที่ epub.js รุ่นนี้เขียนออกมาไม่ตรงกัน
+
+         แทนที่จะไล่หาว่าต้องส่งรูปแบบไหนให้ตรงกับรุ่นไหน เขียน <style> เองตรง ๆ
+         คุมได้หมดและไม่ผูกกับรายละเอียดภายในของไลบรารีที่เปลี่ยนได้ทุกเวอร์ชัน
+
+         ต้องฉีดทุกครั้งที่มีหน้าใหม่ถูกเรนเดอร์ เพราะ epub.js สร้าง document ใหม่
+         ทุกครั้งที่ข้ามบท ไม่ใช่ครั้งเดียวจบ */
+      const injectStyle = (doc: Document, css: string) => {
         if (!css) return;
-        let tag = doc.getElementById('bd-fonts') as HTMLStyleElement | null;
+        let tag = doc.getElementById('bd-style') as HTMLStyleElement | null;
         if (!tag) {
           tag = doc.createElement('style');
-          tag.id = 'bd-fonts';
+          tag.id = 'bd-style';
           doc.head?.appendChild(tag);
         }
         if (tag.textContent !== css) tag.textContent = css;
       };
-      fontCssRef.current = await fontFaceCss();
+      cssRef.current = await sheetFor(prefsRef.current);
       rendition.hooks.content.register((contents: any) => {
-        injectFonts(contents.document, fontCssRef.current);
+        injectStyle(contents.document, cssRef.current);
       });
-      injectRef.current = injectFonts;
+      injectRef.current = injectStyle;
 
       rendition.on('relocated', (loc: any) => {
         const percent = (b.locations.percentageFromCfi(loc.start.cfi) ?? 0) * 100;
@@ -177,44 +218,17 @@ const EpubReader = forwardRef<EpubHandle, Props>(function EpubReader(
   }, [book.id, file.driveFileId, prefs.flow]);
 
   // ---------- ปรับหน้าตาแบบไม่ต้องโหลดใหม่ ----------
-  // เพิ่ม/ลบฟอนต์ระหว่างเปิดหนังสืออยู่ ต้องอัปเดตหน้าที่เรนเดอร์ไปแล้วด้วย
-  // ไม่ใช่รอให้ข้ามบทก่อนถึงจะเห็นผล
   useEffect(() => {
     const r = rendRef.current;
     if (!r) return;
     let dead = false;
     (async () => {
-      const css = await fontFaceCss();
+      const css = await sheetFor(prefs);
       if (dead) return;
-      fontCssRef.current = css;
+      cssRef.current = css;
       for (const c of r.getContents() ?? []) injectRef.current?.(c.document, css);
     })();
     return () => { dead = true; };
-  }, [prefs.fontFamily]);
-
-  useEffect(() => {
-    const r = rendRef.current;
-    if (!r) return;
-    const t = THEMES[prefs.theme];
-    r.themes.register('bd', {
-      body: {
-        background: t.bg,
-        color: t.fg,
-        'font-family': `${fontStackFor(prefs.fontFamily)} !important`,
-        'line-height': `${prefs.lineHeight} !important`,
-        'text-align': prefs.justify ? 'justify' : 'start',
-        padding: `${prefs.margin}px 0`,
-      },
-      a: { color: `${t.link} !important` },
-      p: { 'line-height': `${prefs.lineHeight} !important` },
-      '.hl-yellow': { background: 'rgba(255,217,74,.45)' },
-      '.hl-green': { background: 'rgba(110,231,168,.45)' },
-      '.hl-blue': { background: 'rgba(124,196,250,.45)' },
-      '.hl-pink': { background: 'rgba(249,168,212,.45)' },
-      '.hl-purple': { background: 'rgba(196,181,253,.45)' },
-    });
-    r.themes.select('bd');
-    r.themes.fontSize(`${prefs.fontSize}px`);
   }, [prefs]);
 
   // ---------- API ให้หน้าแม่สั่งงาน ----------
