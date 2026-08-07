@@ -144,10 +144,18 @@ export async function POST(req: Request) {
       });
     }
 
+    /* metadata.db คือฐานข้อมูลจริงของ Calibre — ทุกอย่างที่ผู้ใช้แก้ในโปรแกรมอยู่ในนี้
+       ส่วน metadata.opf เป็นแค่ภาพนิ่งตอนเพิ่มหนังสือ ไม่ถูกเขียนทับเมื่อแก้ metadata
+       (พิสูจน์แล้วกับไลบรารีจริง: ตั้ง series ใน Calibre แล้ว .opf บน Drive ยังว่างเปล่า)
+       จึงต้องส่ง id ของ db กลับไปให้ฝั่ง client โหลดไปอ่านเอง */
+    const dbFile = (byParent.get(folderId) ?? []).find((e) => e.name.toLowerCase() === 'metadata.db');
+
     return NextResponse.json({
       folderId,
       folderCount: allFolders.length,
       bookCount: bookFolders.length,
+      metadataDbId: dbFile?.id,
+      metadataDbSize: Number(dbFile?.size ?? 0),
       books: bookFolders,
     });
   } catch (e) {

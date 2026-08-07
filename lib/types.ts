@@ -47,7 +47,7 @@ export interface Book {
   percent: number;
 
   /** metadata ที่แสดงอยู่มาจากไหน — ใช้ตัดสินว่าสแกนรอบหน้าต้องทำงานหนักซ้ำไหม */
-  metaSource?: 'opf' | 'epub' | 'folder';
+  metaSource?: 'db' | 'opf' | 'epub' | 'folder';
 }
 
 /** ไฟล์ที่ควรเปิดสำหรับเล่มนี้ */

@@ -5,6 +5,7 @@ import { db } from '@/lib/db/idb';
 import { queue } from '@/lib/sync/engine';
 import { parseOpf, calibreIdFromFolder, titleFromFolder, type OpfMeta } from '@/lib/parse/opf';
 import { extractMetaFromEpub } from '@/lib/parse/epub';
+import { readCalibreDb } from '@/lib/parse/calibredb';
 import {
   FORMAT_RANK,
   type Book,
@@ -112,7 +113,7 @@ export interface Filters {
 }
 
 export interface ScanProgress {
-  phase: 'idle' | 'listing' | 'metadata' | 'epub' | 'saving';
+  phase: 'idle' | 'listing' | 'db' | 'metadata' | 'epub' | 'saving';
   done: number;
   total: number;
 }
@@ -217,7 +218,8 @@ export const useLibrary = create<State>((set, get) => ({
       set({ scan: { phase: 'idle', done: 0, total: 0 } });
       throw new Error((await res.json()).error ?? 'สแกนไม่สำเร็จ');
     }
-    const { books: found } = (await res.json()) as {
+    const { books: found, metadataDbId } = (await res.json()) as {
+      metadataDbId?: string;
       books: {
         folderId: string;
         folderName: string;
@@ -228,22 +230,47 @@ export const useLibrary = create<State>((set, get) => ({
       }[];
     };
 
+    /* ---------- metadata.db คือแหล่งข้อมูลอันดับหนึ่ง ----------
+       สิ่งที่ผู้ใช้แก้ในโปรแกรม Calibre (series, เลขเล่ม, แท็ก, ผู้เขียน) ลงที่นี่เท่านั้น
+       ส่วน metadata.opf เป็นภาพนิ่งตอนเพิ่มหนังสือ ไม่ถูกเขียนทับเมื่อแก้ metadata
+       ถ้าอ่าน db ได้ก็ไม่ต้องโหลด .opf 151 ไฟล์ + EPUB อีก 59 เล่มเลย เร็วกว่ากันมาก
+       อ่านไม่ได้ก็ไม่เป็นไร ตกไปใช้ .opf/EPUB แบบเดิม ไม่ทำให้สแกนพัง */
+    let dbMeta = new Map<number, OpfMeta>();
+    if (metadataDbId) {
+      set({ scan: { phase: 'db', done: 0, total: 1 } });
+      try {
+        const r = await fetch(`/api/drive/file/${metadataDbId}`);
+        if (r.ok) dbMeta = await readCalibreDb(await r.blob());
+      } catch {
+        /* CDN ล่ม, ไฟล์เสีย, หรือ Calibre เวอร์ชันที่ schema ต่างไป — ถอยไปใช้ .opf */
+      }
+    }
+
     const known = new Map(get().books.filter((b) => b.folderId).map((b) => [b.folderId!, b]));
     // refresh = อ่าน opf ใหม่ทุกเล่มเพื่ออัปเดต metadata (เช่นตอนแก้บั๊กที่ทำให้อ่าน opf ไม่ได้)
     const todo = refresh ? found : found.filter((f) => !known.has(f.folderId));
 
-    set({ scan: { phase: 'metadata', done: 0, total: todo.length } });
-
     const now = new Date().toISOString();
 
-    // แยกสองกลุ่ม: มี metadata.opf (เบา) กับไม่มี (ต้องแกะจากไฟล์ EPUB ซึ่งหนักกว่ามาก)
-    const withOpf = todo.filter((f) => f.opfFileId);
-    const withoutOpf = todo.filter((f) => !f.opfFileId);
+    /* เล่มไหนอยู่ใน metadata.db ก็จบตรงนั้น ไม่ต้องโหลดไฟล์อะไรเพิ่มอีก
+       จับคู่ด้วย calibreId ที่ Calibre ใส่ไว้ท้ายชื่อโฟลเดอร์ เช่น "Sapiens (142)" */
+    const inDb: { f: (typeof todo)[number]; meta: OpfMeta }[] = [];
+    const rest: typeof todo = [];
+    for (const f of todo) {
+      const cid = calibreIdFromFolder(f.folderName);
+      const m = cid != null ? dbMeta.get(cid) : undefined;
+      if (m) inDb.push({ f, meta: m });
+      else rest.push(f);
+    }
+
+    // ที่เหลือค่อยแยกเป็น มี metadata.opf (เบา) กับไม่มี (ต้องแกะจาก EPUB ซึ่งหนักกว่ามาก)
+    const withOpf = rest.filter((f) => f.opfFileId);
+    const withoutOpf = rest.filter((f) => !f.opfFileId);
 
     const build = async (
       f: (typeof todo)[number],
       meta: OpfMeta | null,
-      source: 'opf' | 'epub' | 'folder'
+      source: 'db' | 'opf' | 'epub' | 'folder'
     ): Promise<Book> => {
       const files = [...f.files].sort((a, b) => FORMAT_RANK[a.format] - FORMAT_RANK[b.format]);
       const prev = known.get(f.folderId);
@@ -285,7 +312,10 @@ export const useLibrary = create<State>((set, get) => ({
 
     const built: Book[] = [];
 
-    // 1) เล่มที่มี metadata.opf — โหลดไฟล์เล็ก ทำได้ทีละ 8
+    // 0) เล่มที่อยู่ใน metadata.db — ไม่ต้องโหลดอะไรเพิ่ม
+    for (const { f, meta } of inDb) built.push(await build(f, meta, 'db'));
+
+    // 1) เล่มที่ไม่อยู่ใน db แต่มี metadata.opf — โหลดไฟล์เล็ก ทำได้ทีละ 8
     set({ scan: { phase: 'metadata', done: 0, total: withOpf.length } });
     built.push(...await pool(withOpf, 8, async (f) => {
       let meta: OpfMeta | null = null;

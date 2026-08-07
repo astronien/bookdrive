@@ -107,6 +107,7 @@ function LibraryInner() {
 
   const scanLabel =
     scan.phase === 'listing' ? 'กำลังไล่โฟลเดอร์บน Drive…'
+      : scan.phase === 'db' ? 'กำลังอ่าน metadata.db ของ Calibre…'
       : scan.phase === 'metadata' ? `กำลังอ่าน metadata.opf ${scan.done}/${scan.total}`
         : scan.phase === 'epub' ? `กำลังแกะชื่อจากไฟล์ EPUB ${scan.done}/${scan.total} (เล่มที่ไม่มี metadata.opf)`
           : scan.phase === 'saving' ? 'กำลังบันทึกลง Drive…' : null;
